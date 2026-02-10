@@ -202,7 +202,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 ml-[260px] p-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="stat-card" data-testid="stat-total-bookings">
             <div className="stat-value">{stats.total_bookings || 0}</div>
             <div className="stat-label">Total Bookings</div>
@@ -215,9 +215,13 @@ export default function AdminDashboard() {
             <div className="stat-value">{stats.confirmed_bookings || 0}</div>
             <div className="stat-label">Confirmed</div>
           </div>
+          <div className="stat-card" data-testid="stat-completed">
+            <div className="stat-value">{stats.completed_bookings || 0}</div>
+            <div className="stat-label">Completed</div>
+          </div>
           <div className="stat-card" data-testid="stat-revenue">
             <div className="stat-value">£{(stats.total_revenue || 0).toFixed(2)}</div>
-            <div className="stat-label">Total Revenue</div>
+            <div className="stat-label">Revenue (Confirmed+Completed)</div>
           </div>
         </div>
 
