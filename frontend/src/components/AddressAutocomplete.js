@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Spinner, X } from '@phosphor-icons/react';
+import { Spinner, X } from '@phosphor-icons/react';
 
 export const AddressAutocomplete = ({ 
   value, 
@@ -75,7 +75,6 @@ export const AddressAutocomplete = ({
     const addr = item.address || {};
     const parts = [];
     
-    // Try to build a concise address
     if (addr.aeroway || addr.airport) {
       parts.push(addr.aeroway || addr.airport);
     } else if (addr.tourism || addr.amenity || addr.building) {
@@ -101,7 +100,6 @@ export const AddressAutocomplete = ({
     setInputValue(newValue);
     setSelectedIndex(-1);
     
-    // Debounce the search
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -163,10 +161,6 @@ export const AddressAutocomplete = ({
   return (
     <div ref={wrapperRef} className="relative">
       <div className="relative">
-        <MapPin 
-          size={20} 
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" 
-        />
         <input
           type="text"
           name={name}
@@ -175,7 +169,7 @@ export const AddressAutocomplete = ({
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
-          className="input-field pl-12 pr-10"
+          className="input-field pr-10"
           required={required}
           autoComplete="off"
           data-testid={dataTestId}
@@ -208,16 +202,13 @@ export const AddressAutocomplete = ({
                 index === selectedIndex ? 'bg-slate-100' : 'hover:bg-slate-50'
               }`}
             >
-              <div className="flex items-start gap-3">
-                <MapPin size={18} className="text-[#d4af37] mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {suggestion.short_name}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                    {suggestion.display_name}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-slate-900">
+                  {suggestion.short_name}
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                  {suggestion.display_name}
+                </p>
               </div>
             </div>
           ))}
