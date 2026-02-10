@@ -1,0 +1,159 @@
+{
+  "identity": {
+    "name": "Planet Transfers",
+    "tone": "Premium, Reliable, Effortless, Global",
+    "archetype": "The Modern Chauffeur",
+    "theme_mode": "light"
+  },
+  "typography": {
+    "font_family": {
+      "heading": "\"Playfair Display\", serif",
+      "body": "\"Manrope\", sans-serif",
+      "mono": "\"JetBrains Mono\", monospace"
+    },
+    "imports": [
+      "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Manrope:wght@200..800&display=swap"
+    ],
+    "scale": {
+      "h1": "text-5xl md:text-7xl font-semibold tracking-tight leading-[1.1]",
+      "h2": "text-4xl md:text-5xl font-medium tracking-tight leading-tight",
+      "h3": "text-2xl md:text-3xl font-medium",
+      "body_lg": "text-lg md:text-xl leading-relaxed text-slate-600",
+      "body_base": "text-base leading-relaxed text-slate-600",
+      "caption": "text-xs tracking-widest uppercase font-semibold text-slate-500"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#0f172a",
+        "foreground": "#f8fafc",
+        "description": "Deep Midnight Blue - The anchor. Use for primary actions, footer, and strong text."
+      },
+      "secondary": {
+        "DEFAULT": "#d4af37",
+        "foreground": "#0f172a",
+        "description": "Muted Gold - Use sparingly for 'Book Now' accents or active states."
+      },
+      "background": {
+        "DEFAULT": "#ffffff",
+        "subtle": "#f8fafc",
+        "dark": "#020617"
+      },
+      "text": {
+        "primary": "#0f172a",
+        "secondary": "#475569",
+        "muted": "#94a3b8"
+      },
+      "border": {
+        "DEFAULT": "#e2e8f0",
+        "subtle": "#f1f5f9"
+      }
+    },
+    "gradients": {
+      "hero_overlay": "linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0))",
+      "gold_shimmer": "linear-gradient(45deg, #d4af37, #f3e5ab, #d4af37)"
+    }
+  },
+  "layout_strategies": {
+    "spacing_scale": {
+      "section_gap": "py-24 md:py-32",
+      "element_gap": "gap-8 md:gap-12",
+      "container_padding": "px-6 md:px-12 lg:px-24"
+    },
+    "grid_system": {
+      "marketing": "grid grid-cols-1 md:grid-cols-12 gap-8",
+      "fleet": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+    }
+  },
+  "component_guidelines": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground h-12 px-8 rounded-sm font-medium hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20",
+      "secondary": "bg-transparent border border-primary text-primary h-12 px-8 rounded-sm font-medium hover:bg-primary hover:text-white transition-all duration-300",
+      "gold": "bg-[#d4af37] text-white h-12 px-8 rounded-sm font-medium hover:bg-[#c5a028] transition-all duration-300"
+    },
+    "cards": {
+      "style": "bg-white rounded-sm border border-border/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1",
+      "glass": "bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl"
+    },
+    "inputs": {
+      "style": "h-12 bg-white border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/20 rounded-sm transition-all font-body text-base"
+    }
+  },
+  "visual_assets": {
+    "icons": {
+      "library": "phosphor-icons",
+      "style": "light",
+      "usage": "Use thin, elegant strokes. No filled icons unless active state."
+    },
+    "images": {
+      "hero": {
+        "url": "https://images.unsplash.com/photo-1733879075560-ff1f9ef8281c?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Chauffeur waiting with luxury car",
+        "treatment": "Use with subtle overlay or parallax effect"
+      },
+      "fleet": {
+        "business": "https://images.unsplash.com/photo-1618480483701-c31ac5590db4?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "economy": "https://images.unsplash.com/photo-1656200149554-15998526487e?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "van": "https://images.unsplash.com/photo-1656200149554-15998526487e?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "bus": "https://images.unsplash.com/photo-1689977140799-c7e8692ab497?crop=entropy&cs=srgb&fm=jpg&q=85"
+      },
+      "locations": {
+        "london": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80",
+        "madrid": "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&q=80",
+        "seychelles": "https://images.unsplash.com/photo-1537551080512-358ecdf268dc?auto=format&fit=crop&q=80",
+        "switzerland": "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&q=80"
+      }
+    }
+  },
+  "page_structure": {
+    "home": {
+      "sections": [
+        "hero_with_booking_widget",
+        "fleet_preview",
+        "features_grid",
+        "service_areas_map",
+        "testimonials_editorial",
+        "cta_banner"
+      ]
+    },
+    "booking_flow": {
+      "steps": [
+        "trip_details",
+        "vehicle_selection",
+        "passenger_info",
+        "payment"
+      ]
+    },
+    "admin": {
+      "layout": "sidebar_layout",
+      "theme": "clean_utility"
+    }
+  },
+  "instructions_to_main_agent": [
+    "INSTALL @phosphor-icons/react IMMEDIATELY.",
+    "Use 'Playfair Display' for ALL headings (h1-h3). It is non-negotiable for the premium feel.",
+    "The Booking Widget must be a 'Floating Card' on top of the Hero Image. Do not put it below the fold.",
+    "Use Step-by-Step animations for the booking form. Do not show all fields at once.",
+    "For the Fleet section, do not use a basic card. Use a horizontal layout where the car image is on the left and details on the right for desktop.",
+    "Implement a 'Price Estimator' logic in the frontend that updates in real-time.",
+    "For the Footer, use the 'Deep Midnight Blue' background with Gold text for the logo. Make it look like a magazine footer."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add '.App { text-align: center; }' in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use 'sonner' for toasts"
+  ]
+}
