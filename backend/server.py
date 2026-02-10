@@ -173,8 +173,8 @@ VEHICLE_TYPES = [
     }
 ]
 
-# Admin password (in production, use proper auth)
-ADMIN_PASSWORD = "planet2024"
+# Admin password from environment
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'planet2024')
 
 # ==================== HELPER FUNCTIONS ====================
 
