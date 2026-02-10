@@ -261,29 +261,30 @@ export default function HomePage() {
                 </div>
 
                 {/* Passengers & Luggage */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Passengers & Luggage</label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowPassengerDropdown(!showPassengerDropdown)}
-                      className="input-field flex items-center justify-between text-left"
-                      data-testid="passengers-luggage-btn"
-                    >
-                      <span className="flex items-center gap-4">
-                        <span className="flex items-center gap-1">
-                          <Users size={18} className="text-slate-400" />
-                          {formData.passengers}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Suitcase size={18} className="text-slate-400" />
-                          {formData.luggage}
-                        </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassengerDropdown(!showPassengerDropdown)}
+                    className="input-field flex items-center justify-between text-left w-full"
+                    data-testid="passengers-luggage-btn"
+                  >
+                    <span className="flex items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <Users size={18} className="text-slate-400" />
+                        {formData.passengers}
                       </span>
-                      <CaretDown size={18} className="text-slate-400" />
-                    </button>
-                    
-                    {showPassengerDropdown && (
+                      <span className="flex items-center gap-1">
+                        <Suitcase size={18} className="text-slate-400" />
+                        {formData.luggage}
+                      </span>
+                    </span>
+                    <CaretDown size={18} className="text-slate-400" />
+                  </button>
+                  
+                  {showPassengerDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowPassengerDropdown(false)}></div>
                       <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-lg p-4 z-20">
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm text-slate-700">Passengers</span>
@@ -302,11 +303,11 @@ export default function HomePage() {
                           </div>
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
 
-                <button type="submit" className="btn-gold w-full flex items-center justify-center gap-2" data-testid="continue-btn">
+                <button type="submit" className="btn-gold w-full flex items-center justify-center gap-2 relative z-0" data-testid="continue-btn">
                   Continue to Vehicle Selection
                   <ArrowRight size={20} />
                 </button>
