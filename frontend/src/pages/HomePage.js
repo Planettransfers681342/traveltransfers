@@ -162,7 +162,7 @@ export default function HomePage() {
             </div>
 
             {/* Booking Widget */}
-            <div className="booking-widget glass-card p-8 fade-in fade-in-delay-2" data-testid="booking-widget">
+            <div className="booking-widget glass-card p-8 fade-in fade-in-delay-2" id="booking-form" data-testid="booking-widget">
               <h2 className="text-2xl font-semibold text-slate-900 mb-6">Book Your Transfer</h2>
               
               {/* Trip Type Toggle */}
@@ -187,77 +187,65 @@ export default function HomePage() {
                 {/* Pickup Location */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Pickup Location *</label>
-                  <div className="relative">
-                    <MapPin size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <select
-                      name="pickup_location"
-                      value={formData.pickup_location}
-                      onChange={handleInputChange}
-                      className="input-field pl-12"
-                      required
-                      data-testid="pickup-location"
-                    >
-                      <option value="">Select pickup location</option>
-                      {POPULAR_ROUTES.map(route => (
-                        <option key={route.from} value={route.from}>{route.from}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    name="pickup_location"
+                    value={formData.pickup_location}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                    data-testid="pickup-location"
+                  >
+                    <option value="">Select pickup location</option>
+                    {POPULAR_ROUTES.map(route => (
+                      <option key={route.from} value={route.from}>{route.from}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Dropoff Location */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Dropoff Location *</label>
-                  <div className="relative">
-                    <MapPin size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <select
-                      name="dropoff_location"
-                      value={formData.dropoff_location}
-                      onChange={handleInputChange}
-                      className="input-field pl-12"
-                      required
-                      data-testid="dropoff-location"
-                    >
-                      <option value="">Select dropoff location</option>
-                      {POPULAR_ROUTES.map(route => (
-                        <option key={route.to} value={route.to}>{route.to}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    name="dropoff_location"
+                    value={formData.dropoff_location}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                    data-testid="dropoff-location"
+                  >
+                    <option value="">Select dropoff location</option>
+                    {POPULAR_ROUTES.map(route => (
+                      <option key={route.to} value={route.to}>{route.to}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Date and Time */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Pickup Date *</label>
-                    <div className="relative">
-                      <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="date"
-                        name="pickup_date"
-                        value={formData.pickup_date}
-                        onChange={handleInputChange}
-                        className="input-field pl-12"
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                        data-testid="pickup-date"
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      name="pickup_date"
+                      value={formData.pickup_date}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      data-testid="pickup-date"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Time *</label>
-                    <div className="relative">
-                      <Clock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="time"
-                        name="pickup_time"
-                        value={formData.pickup_time}
-                        onChange={handleInputChange}
-                        className="input-field pl-12"
-                        required
-                        data-testid="pickup-time"
-                      />
-                    </div>
+                    <input
+                      type="time"
+                      name="pickup_time"
+                      value={formData.pickup_time}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      required
+                      data-testid="pickup-time"
+                    />
                   </div>
                 </div>
 
@@ -271,13 +259,10 @@ export default function HomePage() {
                     data-testid="passengers-luggage-btn"
                   >
                     <span className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <Users size={18} className="text-slate-400" />
-                        {formData.passengers}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Suitcase size={18} className="text-slate-400" />
-                        {formData.luggage}
+                      <span>{formData.passengers} Passengers</span>
+                      <span>{formData.luggage} Luggage</span>
+                    </span>
+                    <CaretDown size={18} className="text-slate-400" />
                       </span>
                     </span>
                     <CaretDown size={18} className="text-slate-400" />
