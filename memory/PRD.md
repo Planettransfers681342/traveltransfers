@@ -16,20 +16,25 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 1. **Travelers**: Book airport transfers with vehicle selection and secure payment
 2. **Admin**: Manage bookings, set route prices, view revenue stats
 
-## Core Features Implemented
+## Core Features Implemented (Feb 10, 2026)
 
 ### Customer Facing
 - [x] Premium homepage with booking widget
 - [x] Trip type toggle (one-way/round-trip)
-- [x] Location, date, time, passenger selection
-- [x] Fleet showcase (Economy, Business, Group, Bus)
+- [x] Location, date, time, passenger selection (clean inputs without icons)
+- [x] Fleet showcase with custom vehicle images:
+  - Economy: Silver Hyundai sedan
+  - Business: Black Mercedes sedan
+  - Group: Black Mercedes van
+  - Bus: Black coach bus
 - [x] Features section (Meet & Greet, Flight Tracking, etc.)
 - [x] Testimonials and service areas display
-- [x] WhatsApp contact integration
+- [x] WhatsApp contact integration (floating button)
 - [x] 3-step booking flow (Vehicle → Passenger → Review & Pay)
 - [x] Real-time price calculation
 - [x] Stripe checkout integration
 - [x] Payment success/cancel pages with status polling
+- [x] "Request Quote" button scrolls to booking form
 
 ### Admin Dashboard
 - [x] Password-protected login (planet2024)
@@ -37,6 +42,16 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] Bookings management with search & status updates
 - [x] Route prices CRUD (add/edit/delete)
 - [x] Pre-seeded routes for London, Madrid, Seychelles, Switzerland
+
+### Legal Pages
+- [x] Terms & Conditions (/terms-conditions)
+- [x] Privacy Policy (/privacy-policy)
+- [x] Cookie Policy (/cookie-policy)
+- [x] Footer with Legal section links
+
+### Contact Information
+- WhatsApp: +44 773 947 6432
+- Email: GBRoyaltransfers@gmail.com
 
 ## API Endpoints
 - `GET /api/` - Health check
@@ -56,14 +71,11 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - `GET /api/admin/stats` - Dashboard statistics
 - `POST /api/seed` - Seed initial route prices
 
-## What's Been Implemented (Feb 10, 2026)
-- Full rebuild of Planet Transfers application
-- Premium UI with Playfair Display/Manrope fonts
-- Complete booking flow with vehicle selection
-- Stripe payment integration (test mode)
-- Admin dashboard with bookings & price management
-- MongoDB data persistence
-- WhatsApp contact button
+## Technical Notes
+- Admin password: `planet2024`
+- Stripe test key: `sk_test_emergent`
+- Default routes seeded via `/api/seed`
+- GBP currency for all transactions
 
 ## Backlog / Future Features
 - [ ] Email notifications (booking confirmation, driver assignment)
@@ -74,9 +86,3 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [ ] Promo codes/discounts
 - [ ] Analytics dashboard
 - [ ] SMS notifications via Twilio
-
-## Technical Notes
-- Admin password: `planet2024`
-- Stripe test key: `sk_test_emergent`
-- Default routes seeded via `/api/seed`
-- GBP currency for all transactions
