@@ -574,12 +574,36 @@ async def stripe_webhook(request: Request):
             booking_id = webhook_response.metadata.get("booking_id")
             
             if booking_id:
+                # Add status history entries
+                now = datetime.now(timezone.utc).isoformat()
+                payment_history = {
+                    "type": "payment_status",
+                    "from_status": "pending",
+                    "to_status": "paid",
+                    "timestamp": now,
+                    "note": "Payment received via Stripe"
+                }
+                booking_history = {
+                    "type": "booking_status",
+                    "from_status": "pending",
+                    "to_status": "confirmed",
+                    "timestamp": now,
+                    "note": "Booking confirmed after payment"
+                }
+                
                 await db.bookings.update_one(
                     {"id": booking_id},
-                    {"$set": {
-                        "payment_status": "paid",
-                        "booking_status": "confirmed"
-                    }}
+                    {
+                        "$set": {
+                            "payment_status": "paid",
+                            "booking_status": "confirmed"
+                        },
+                        "$push": {
+                            "status_history": {
+                                "$each": [payment_history, booking_history]
+                            }
+                        }
+                    }
                 )
                 
                 await db.payment_transactions.update_one(
