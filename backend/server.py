@@ -90,10 +90,12 @@ class Booking(BaseModel):
     passenger_phone: str
     flight_number: Optional[str] = None
     special_requests: Optional[str] = None
+    admin_notes: Optional[str] = None
     price: float
-    payment_status: str = "pending"  # pending, paid, failed, refunded
+    payment_status: str = "pending"  # pending, paid, refunded
     stripe_session_id: Optional[str] = None
     booking_status: str = "pending"  # pending, confirmed, completed, cancelled
+    status_history: List[Dict] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BookingCreate(BaseModel):
