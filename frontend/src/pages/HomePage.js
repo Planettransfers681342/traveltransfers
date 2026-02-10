@@ -263,9 +263,6 @@ export default function HomePage() {
                       <span>{formData.luggage} Luggage</span>
                     </span>
                     <CaretDown size={18} className="text-slate-400" />
-                      </span>
-                    </span>
-                    <CaretDown size={18} className="text-slate-400" />
                   </button>
                   
                   {showPassengerDropdown && (
