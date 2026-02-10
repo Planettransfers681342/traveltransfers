@@ -131,13 +131,10 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-6">
             <a 
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+              href="#booking-form" 
               className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"
               data-testid="request-quote-btn"
             >
-              <WhatsappLogo size={20} weight="fill" />
               Request Quote
             </a>
             <a href="/admin" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Admin</a>
