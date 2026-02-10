@@ -17,6 +17,7 @@ import {
   Envelope
 } from '@phosphor-icons/react';
 import axios from 'axios';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
