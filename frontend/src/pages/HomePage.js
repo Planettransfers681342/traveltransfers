@@ -438,12 +438,12 @@ export default function HomePage() {
       <footer className="footer">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-            <div className="md:col-span-2">
+            <div className="md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
                 <CarSimple size={32} weight="fill" className="text-[#d4af37]" />
                 <span className="font-['Playfair_Display'] text-2xl font-semibold text-[#d4af37]">Planet Transfers</span>
               </div>
-              <p className="text-white/70 max-w-md">
+              <p className="text-white/70">
                 Premium airport transfer service operating worldwide. Reliable, professional, and always on time.
               </p>
             </div>
@@ -453,6 +453,14 @@ export default function HomePage() {
                 <li><a href="#fleet">Our Fleet</a></li>
                 <li><a href="#locations">Destinations</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-white mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><a href="/terms-conditions">Terms & Conditions</a></li>
+                <li><a href="/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/cookie-policy">Cookie Policy</a></li>
               </ul>
             </div>
             <div>
