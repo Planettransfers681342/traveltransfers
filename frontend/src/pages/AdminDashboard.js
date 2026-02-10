@@ -264,7 +264,12 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {filteredBookings.map((booking) => (
-                      <tr key={booking.id} data-testid={`booking-row-${booking.id}`}>
+                      <tr 
+                        key={booking.id} 
+                        data-testid={`booking-row-${booking.id}`}
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/admin/booking/${booking.id}`)}
+                      >
                         <td>
                           <div>
                             <p className="font-medium">{booking.passenger_name}</p>
@@ -273,8 +278,8 @@ export default function AdminDashboard() {
                         </td>
                         <td>
                           <div className="text-sm">
-                            <p>{booking.pickup_location}</p>
-                            <p className="text-slate-500">→ {booking.dropoff_location}</p>
+                            <p>{booking.pickup_location?.substring(0, 30)}{booking.pickup_location?.length > 30 ? '...' : ''}</p>
+                            <p className="text-slate-500">→ {booking.dropoff_location?.substring(0, 30)}{booking.dropoff_location?.length > 30 ? '...' : ''}</p>
                           </div>
                         </td>
                         <td>
@@ -295,7 +300,7 @@ export default function AdminDashboard() {
                             {booking.booking_status}
                           </span>
                         </td>
-                        <td>
+                        <td onClick={(e) => e.stopPropagation()}>
                           <select
                             value={booking.booking_status}
                             onChange={(e) => handleStatusChange(booking.id, e.target.value)}
