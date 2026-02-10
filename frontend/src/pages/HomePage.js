@@ -128,16 +128,19 @@ export default function HomePage() {
             <CarSimple size={32} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#fleet" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Fleet</a>
-            <a href="#locations" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Destinations</a>
-            <a href="#how-it-works" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">How It Works</a>
-            <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700 transition-colors">
+          <div className="flex items-center gap-6">
+            <a 
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"
+              data-testid="request-quote-btn"
+            >
               <WhatsappLogo size={20} weight="fill" />
-              Contact
+              Request Quote
             </a>
+            <a href="/admin" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Admin</a>
           </div>
-          <a href="/admin" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Admin</a>
         </div>
       </nav>
 
