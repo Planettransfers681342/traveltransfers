@@ -651,11 +651,6 @@ async def get_admin_stats():
         "completed_bookings": completed_bookings,
         "total_revenue": round(total_revenue, 2)
     }
-        "total_bookings": total_bookings,
-        "pending_bookings": pending_bookings,
-        "confirmed_bookings": confirmed_bookings,
-        "total_revenue": round(total_revenue, 2)
-    }
 
 # ==================== SEED DATA ====================
 
