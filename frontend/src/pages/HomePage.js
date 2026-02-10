@@ -29,7 +29,7 @@ const HERO_IMAGE = "https://images.unsplash.com/photo-1733879075560-ff1f9ef8281c
 // Fleet Images
 const FLEET_IMAGES = {
   economy: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/zjojrhht_image.png",
-  business: "https://images.unsplash.com/photo-1618480483701-c31ac5590db4?crop=entropy&cs=srgb&fm=jpg&q=85",
+  business: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/fio8po2v_image.png",
   group: "https://images.unsplash.com/photo-1656200149554-15998526487e?crop=entropy&cs=srgb&fm=jpg&q=85",
   bus: "https://images.unsplash.com/photo-1689977140799-c7e8692ab497?crop=entropy&cs=srgb&fm=jpg&q=85"
 };
