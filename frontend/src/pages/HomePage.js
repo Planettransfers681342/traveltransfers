@@ -478,6 +478,10 @@ export default function HomePage() {
                   <Phone size={18} />
                   <span>+44 773 947 6432</span>
                 </li>
+                <li className="flex items-center gap-2">
+                  <Envelope size={18} />
+                  <a href="mailto:GBRoyaltransfers@gmail.com">GBRoyaltransfers@gmail.com</a>
+                </li>
               </ul>
             </div>
           </div>
