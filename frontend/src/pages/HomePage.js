@@ -131,13 +131,13 @@ export default function HomePage() {
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </div>
           <div className="flex items-center gap-6">
-            <a 
-              href="#booking-form" 
+            <button 
+              onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
               className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"
               data-testid="request-quote-btn"
             >
               Request Quote
-            </a>
+            </button>
             <a href="/admin" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Admin</a>
           </div>
         </div>
