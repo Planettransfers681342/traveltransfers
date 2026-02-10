@@ -702,6 +702,62 @@ async def get_admin_stats():
 
 # ==================== SEED DATA ====================
 
+# ==================== QUOTES ====================
+
+@api_router.post("/quotes")
+async def create_quote(quote: QuoteRequestCreate):
+    """Create a new quote request"""
+    quote_obj = QuoteRequest(**quote.model_dump())
+    doc = quote_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.quotes.insert_one(doc)
+    return quote_obj
+
+@api_router.get("/quotes")
+async def get_all_quotes():
+    """Get all quotes for admin panel"""
+    quotes = await db.quotes.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return quotes
+
+@api_router.get("/quotes/{quote_id}")
+async def get_quote(quote_id: str):
+    """Get a single quote by ID"""
+    quote = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return quote
+
+@api_router.put("/quotes/{quote_id}/status")
+async def update_quote_status(quote_id: str, update: QuoteStatusUpdate):
+    """Update quote status"""
+    valid_statuses = ["new", "responded", "converted", "closed"]
+    if update.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid quote status")
+    
+    update_data = {"status": update.status}
+    if update.admin_notes is not None:
+        update_data["admin_notes"] = update.admin_notes
+    
+    result = await db.quotes.update_one(
+        {"id": quote_id},
+        {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    
+    return {"message": "Quote status updated", "new_status": update.status}
+
+@api_router.delete("/quotes/{quote_id}")
+async def delete_quote(quote_id: str):
+    """Delete a quote"""
+    result = await db.quotes.delete_one({"id": quote_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return {"message": "Quote deleted"}
+
+# ==================== SEED DATA ====================
+
 @api_router.post("/seed")
 async def seed_data():
     """Seed initial route prices"""

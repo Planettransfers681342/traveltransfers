@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { CarSimple, X, CheckCircle, Spinner } from '@phosphor-icons/react';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import axios from 'axios';
 
-const WHATSAPP_NUMBER = "447739476432";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function QuoteRequest() {
   const [step, setStep] = useState(1);
@@ -48,37 +50,33 @@ export default function QuoteRequest() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Build WhatsApp message
-    const message = `
-*New Quote Request - Planet Transfers*
-
-*Trip Details:*
-• Type: ${formData.trip_type}
-• From: ${formData.pickup_location}
-• To: ${formData.dropoff_location}
-• Date: ${formData.pickup_date} at ${formData.pickup_time}
-${formData.trip_type === 'round-trip' ? `• Return: ${formData.return_date} at ${formData.return_time}` : ''}
-• Passengers: ${formData.passengers}
-• Luggage: ${formData.luggage}
-${formData.vehicle_preference ? `• Vehicle Preference: ${formData.vehicle_preference}` : ''}
-
-*Passenger Details:*
-• Name: ${formData.passenger_name}
-• Email: ${formData.passenger_email}
-• Phone: ${formData.passenger_phone}
-${formData.flight_number ? `• Flight: ${formData.flight_number}` : ''}
-${formData.special_requests ? `• Special Requests: ${formData.special_requests}` : ''}
-    `.trim();
-
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-
-    // Open WhatsApp with the message
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    try {
+      // Submit quote to backend API
+      await axios.post(`${API}/quotes`, {
+        trip_type: formData.trip_type,
+        pickup_location: formData.pickup_location,
+        dropoff_location: formData.dropoff_location,
+        pickup_date: formData.pickup_date,
+        pickup_time: formData.pickup_time,
+        return_date: formData.return_date || null,
+        return_time: formData.return_time || null,
+        passengers: parseInt(formData.passengers) || formData.passengers,
+        luggage: parseInt(formData.luggage) || formData.luggage,
+        vehicle_preference: formData.vehicle_preference || null,
+        passenger_name: formData.passenger_name,
+        passenger_email: formData.passenger_email,
+        passenger_phone: formData.passenger_phone,
+        flight_number: formData.flight_number || null,
+        special_requests: formData.special_requests || null
+      });
+      
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting quote:', error);
+      alert('There was an error submitting your quote. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -88,16 +86,16 @@ ${formData.special_requests ? `• Special Requests: ${formData.special_requests
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle size={48} weight="fill" className="text-green-500" />
           </div>
-          <h2 className="text-2xl font-semibold text-slate-900 mb-4">Quote Request Sent!</h2>
+          <h2 className="text-2xl font-semibold text-slate-900 mb-4">Quote Request Received!</h2>
           <p className="text-slate-600 mb-6">
-            Your quote request has been prepared. Complete the process by sending the message via WhatsApp.
+            Thank you for your quote request. Our team has received your details and will get back to you shortly.
           </p>
           <p className="text-sm text-slate-500 mb-6">
-            We'll respond with a personalized quote within 30 minutes during business hours.
+            We'll respond with a personalized quote within 30 minutes during business hours via email or phone.
           </p>
           <button
             onClick={() => window.close()}
-            className="btn-primary w-full"
+            className="btn-gold w-full"
           >
             Close Window
           </button>
@@ -452,10 +450,10 @@ ${formData.special_requests ? `• Special Requests: ${formData.special_requests
                     {isSubmitting ? (
                       <>
                         <Spinner size={20} className="animate-spin" />
-                        Sending...
+                        Submitting...
                       </>
                     ) : (
-                      'Request Quote via WhatsApp'
+                      'Submit Quote Request'
                     )}
                   </button>
                 </div>
