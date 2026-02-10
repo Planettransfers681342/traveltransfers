@@ -295,9 +295,28 @@ async def create_booking(booking: BookingCreate):
     
     price = calculate_booking_price(route_price, booking.vehicle_type, booking.trip_type)
     
+    now = datetime.now(timezone.utc)
+    initial_history = [
+        {
+            "type": "booking_status",
+            "from_status": None,
+            "to_status": "pending",
+            "timestamp": now.isoformat(),
+            "note": "Booking created"
+        },
+        {
+            "type": "payment_status",
+            "from_status": None,
+            "to_status": "pending",
+            "timestamp": now.isoformat(),
+            "note": "Awaiting payment"
+        }
+    ]
+    
     booking_obj = Booking(
         **booking.model_dump(),
-        price=price
+        price=price,
+        status_history=initial_history
     )
     
     doc = booking_obj.model_dump()
