@@ -608,12 +608,25 @@ async def get_admin_stats():
     total_bookings = await db.bookings.count_documents({})
     pending_bookings = await db.bookings.count_documents({"booking_status": "pending"})
     confirmed_bookings = await db.bookings.count_documents({"booking_status": "confirmed"})
+    completed_bookings = await db.bookings.count_documents({"booking_status": "completed"})
     
-    # Calculate revenue from paid bookings
-    paid_bookings = await db.bookings.find({"payment_status": "paid"}, {"_id": 0, "price": 1}).to_list(1000)
-    total_revenue = sum(b.get("price", 0) for b in paid_bookings)
+    # Calculate revenue from CONFIRMED + COMPLETED bookings only (with paid status)
+    revenue_bookings = await db.bookings.find(
+        {
+            "payment_status": "paid",
+            "booking_status": {"$in": ["confirmed", "completed"]}
+        }, 
+        {"_id": 0, "price": 1}
+    ).to_list(1000)
+    total_revenue = sum(b.get("price", 0) for b in revenue_bookings)
     
     return {
+        "total_bookings": total_bookings,
+        "pending_bookings": pending_bookings,
+        "confirmed_bookings": confirmed_bookings,
+        "completed_bookings": completed_bookings,
+        "total_revenue": round(total_revenue, 2)
+    }
         "total_bookings": total_bookings,
         "pending_bookings": pending_bookings,
         "confirmed_bookings": confirmed_bookings,
