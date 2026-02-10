@@ -7,6 +7,9 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import TermsConditions from "@/pages/TermsConditions";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import CookiePolicy from "@/pages/CookiePolicy";
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
           <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/terms-conditions" element={<TermsConditions />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
         </Routes>
       </BrowserRouter>
     </div>
