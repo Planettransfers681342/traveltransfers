@@ -127,6 +127,49 @@ class PaymentTransaction(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class QuoteRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    trip_type: str
+    pickup_location: str
+    dropoff_location: str
+    pickup_date: str
+    pickup_time: str
+    return_date: Optional[str] = None
+    return_time: Optional[str] = None
+    passengers: int
+    luggage: int
+    vehicle_preference: Optional[str] = None
+    passenger_name: str
+    passenger_email: str
+    passenger_phone: str
+    flight_number: Optional[str] = None
+    special_requests: Optional[str] = None
+    status: str = "new"  # new, responded, converted, closed
+    admin_notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class QuoteRequestCreate(BaseModel):
+    trip_type: str
+    pickup_location: str
+    dropoff_location: str
+    pickup_date: str
+    pickup_time: str
+    return_date: Optional[str] = None
+    return_time: Optional[str] = None
+    passengers: int
+    luggage: int
+    vehicle_preference: Optional[str] = None
+    passenger_name: str
+    passenger_email: str
+    passenger_phone: str
+    flight_number: Optional[str] = None
+    special_requests: Optional[str] = None
+
+class QuoteStatusUpdate(BaseModel):
+    status: str
+    admin_notes: Optional[str] = None
+
 class AdminLogin(BaseModel):
     password: str
 
