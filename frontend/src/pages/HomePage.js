@@ -188,37 +188,27 @@ export default function HomePage() {
                 {/* Pickup Location */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Pickup Location *</label>
-                  <select
+                  <AddressAutocomplete
                     name="pickup_location"
                     value={formData.pickup_location}
                     onChange={handleInputChange}
-                    className="input-field"
+                    placeholder="Search pickup address, airport, hotel..."
                     required
-                    data-testid="pickup-location"
-                  >
-                    <option value="">Select pickup location</option>
-                    {POPULAR_ROUTES.map(route => (
-                      <option key={route.from} value={route.from}>{route.from}</option>
-                    ))}
-                  </select>
+                    dataTestId="pickup-location"
+                  />
                 </div>
 
                 {/* Dropoff Location */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Dropoff Location *</label>
-                  <select
+                  <AddressAutocomplete
                     name="dropoff_location"
                     value={formData.dropoff_location}
                     onChange={handleInputChange}
-                    className="input-field"
+                    placeholder="Search dropoff address, airport, hotel..."
                     required
-                    data-testid="dropoff-location"
-                  >
-                    <option value="">Select dropoff location</option>
-                    {POPULAR_ROUTES.map(route => (
-                      <option key={route.to} value={route.to}>{route.to}</option>
-                    ))}
-                  </select>
+                    dataTestId="dropoff-location"
+                  />
                 </div>
 
                 {/* Date and Time */}
