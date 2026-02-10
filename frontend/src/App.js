@@ -10,6 +10,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import TermsConditions from "@/pages/TermsConditions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import CookiePolicy from "@/pages/CookiePolicy";
+import QuoteRequest from "@/pages/QuoteRequest";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/terms-conditions" element={<TermsConditions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/quote" element={<QuoteRequest />} />
         </Routes>
       </BrowserRouter>
     </div>
