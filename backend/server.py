@@ -207,6 +207,11 @@ def calculate_booking_price(route_price: dict, vehicle_type: str, trip_type: str
 
 # ==================== API ROUTES ====================
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Kubernetes readiness probe"""
+    return {"status": "healthy"}
+
 @api_router.get("/")
 async def root():
     return {"message": "Planet Transfers API"}
