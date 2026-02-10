@@ -337,20 +337,95 @@ async def get_booking(booking_id: str):
         raise HTTPException(status_code=404, detail="Booking not found")
     return booking
 
+class BookingStatusUpdate(BaseModel):
+    status: str
+    note: Optional[str] = None
+
+class PaymentStatusUpdate(BaseModel):
+    status: str
+    note: Optional[str] = None
+
+class BookingNotesUpdate(BaseModel):
+    admin_notes: str
+
 @api_router.put("/bookings/{booking_id}/status")
-async def update_booking_status(booking_id: str, status: str):
+async def update_booking_status(booking_id: str, update: BookingStatusUpdate):
     valid_statuses = ["pending", "confirmed", "completed", "cancelled"]
-    if status not in valid_statuses:
-        raise HTTPException(status_code=400, detail="Invalid status")
+    if update.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid booking status")
+    
+    # Get current booking
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    old_status = booking.get("booking_status", "pending")
+    
+    # Create history entry
+    history_entry = {
+        "type": "booking_status",
+        "from_status": old_status,
+        "to_status": update.status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "note": update.note or f"Status changed from {old_status} to {update.status}"
+    }
     
     result = await db.bookings.update_one(
         {"id": booking_id},
-        {"$set": {"booking_status": status}}
+        {
+            "$set": {"booking_status": update.status},
+            "$push": {"status_history": history_entry}
+        }
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Booking not found")
     
-    return {"message": "Status updated"}
+    return {"message": "Booking status updated", "new_status": update.status}
+
+@api_router.put("/bookings/{booking_id}/payment-status")
+async def update_payment_status(booking_id: str, update: PaymentStatusUpdate):
+    valid_statuses = ["pending", "paid", "refunded"]
+    if update.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid payment status")
+    
+    # Get current booking
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    old_status = booking.get("payment_status", "pending")
+    
+    # Create history entry
+    history_entry = {
+        "type": "payment_status",
+        "from_status": old_status,
+        "to_status": update.status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "note": update.note or f"Payment status changed from {old_status} to {update.status}"
+    }
+    
+    result = await db.bookings.update_one(
+        {"id": booking_id},
+        {
+            "$set": {"payment_status": update.status},
+            "$push": {"status_history": history_entry}
+        }
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    return {"message": "Payment status updated", "new_status": update.status}
+
+@api_router.put("/bookings/{booking_id}/notes")
+async def update_booking_notes(booking_id: str, update: BookingNotesUpdate):
+    result = await db.bookings.update_one(
+        {"id": booking_id},
+        {"$set": {"admin_notes": update.admin_notes}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    return {"message": "Notes updated"}
 
 # ==================== STRIPE PAYMENT ====================
 
