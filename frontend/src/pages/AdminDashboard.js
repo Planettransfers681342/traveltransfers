@@ -72,7 +72,7 @@ export default function AdminDashboard() {
 
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
-      await axios.put(`${API}/bookings/${bookingId}/status?status=${newStatus}`);
+      await axios.put(`${API}/bookings/${bookingId}/status`, { status: newStatus });
       fetchData();
     } catch (error) {
       console.error('Error updating status:', error);
