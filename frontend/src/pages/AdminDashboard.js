@@ -12,7 +12,9 @@ import {
   X,
   Check,
   CaretDown,
-  MagnifyingGlass
+  MagnifyingGlass,
+  ChatCircleText,
+  Eye
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -37,6 +39,8 @@ export default function AdminDashboard() {
     group_price: '',
     bus_price: ''
   });
+  const [quotes, setQuotes] = useState([]);
+  const [quotesSearchTerm, setQuotesSearchTerm] = useState('');
 
   useEffect(() => {
     // Check auth
@@ -50,14 +54,16 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, bookingsRes, routesRes] = await Promise.all([
+      const [statsRes, bookingsRes, routesRes, quotesRes] = await Promise.all([
         axios.get(`${API}/admin/stats`),
         axios.get(`${API}/bookings`),
-        axios.get(`${API}/routes/prices`)
+        axios.get(`${API}/routes/prices`),
+        axios.get(`${API}/quotes`)
       ]);
       setStats(statsRes.data);
       setBookings(bookingsRes.data);
       setRoutes(routesRes.data);
+      setQuotes(quotesRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -135,11 +141,37 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleQuoteStatusChange = async (quoteId, newStatus) => {
+    try {
+      await axios.put(`${API}/quotes/${quoteId}/status`, { status: newStatus });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+    }
+  };
+
+  const handleDeleteQuote = async (quoteId) => {
+    if (!window.confirm('Are you sure you want to delete this quote request?')) return;
+    try {
+      await axios.delete(`${API}/quotes/${quoteId}`);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting quote:', error);
+    }
+  };
+
   const filteredBookings = bookings.filter(booking => 
     booking.passenger_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     booking.passenger_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     booking.pickup_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     booking.dropoff_location?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredQuotes = quotes.filter(quote => 
+    quote.passenger_name?.toLowerCase().includes(quotesSearchTerm.toLowerCase()) ||
+    quote.passenger_email?.toLowerCase().includes(quotesSearchTerm.toLowerCase()) ||
+    quote.pickup_location?.toLowerCase().includes(quotesSearchTerm.toLowerCase()) ||
+    quote.dropoff_location?.toLowerCase().includes(quotesSearchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status) => {
@@ -154,6 +186,16 @@ export default function AdminDashboard() {
 
   const getPaymentBadge = (status) => {
     return status === 'paid' ? 'badge-paid' : 'badge-pending';
+  };
+
+  const getQuoteStatusBadge = (status) => {
+    const badges = {
+      new: 'badge-pending',
+      responded: 'badge-confirmed',
+      converted: 'badge-completed',
+      closed: 'badge-cancelled'
+    };
+    return badges[status] || 'badge-pending';
   };
 
   return (
@@ -184,6 +226,19 @@ export default function AdminDashboard() {
           >
             <CurrencyGbp size={20} />
             <span>Route Prices</span>
+          </div>
+          <div
+            onClick={() => setActiveTab('quotes')}
+            className={`admin-nav-item ${activeTab === 'quotes' ? 'active' : ''}`}
+            data-testid="nav-quotes"
+          >
+            <ChatCircleText size={20} />
+            <span>Quote Requests</span>
+            {quotes.filter(q => q.status === 'new').length > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {quotes.filter(q => q.status === 'new').length}
+              </span>
+            )}
           </div>
         </nav>
 
