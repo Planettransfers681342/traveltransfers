@@ -721,7 +721,7 @@ async def get_all_quotes():
     return quotes
 
 @api_router.get("/quotes/{quote_id}")
-async def get_quote(quote_id: str):
+async def get_quote_by_id(quote_id: str):
     """Get a single quote by ID"""
     quote = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not quote:
