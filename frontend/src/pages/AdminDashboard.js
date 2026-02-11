@@ -456,6 +456,117 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* Quotes Tab */}
+        {activeTab === 'quotes' && (
+          <div className="admin-card" data-testid="quotes-section">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-slate-900">Quote Requests</h2>
+              <div className="relative">
+                <MagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search quotes..."
+                  value={quotesSearchTerm}
+                  onChange={(e) => setQuotesSearchTerm(e.target.value)}
+                  className="input-field pl-10 h-10 w-64"
+                  data-testid="search-quotes"
+                />
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12">Loading...</div>
+            ) : filteredQuotes.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">No quote requests found</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Customer</th>
+                      <th>Route</th>
+                      <th>Date & Time</th>
+                      <th>Passengers</th>
+                      <th>Vehicle Pref</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredQuotes.map((quote) => (
+                      <tr key={quote.id} data-testid={`quote-row-${quote.id}`}>
+                        <td>
+                          <div>
+                            <p className="font-medium">{quote.passenger_name}</p>
+                            <p className="text-xs text-slate-500">{quote.passenger_email}</p>
+                            <p className="text-xs text-slate-500">{quote.passenger_phone}</p>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="text-sm">
+                            <p>{quote.pickup_location?.substring(0, 30)}{quote.pickup_location?.length > 30 ? '...' : ''}</p>
+                            <p className="text-slate-500">→ {quote.dropoff_location?.substring(0, 30)}{quote.dropoff_location?.length > 30 ? '...' : ''}</p>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="text-sm">
+                            <p>{quote.pickup_date}</p>
+                            <p className="text-slate-500">{quote.pickup_time}</p>
+                            {quote.trip_type === 'round-trip' && (
+                              <p className="text-xs text-amber-600 mt-1">Return: {quote.return_date}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <p>{quote.passengers}</p>
+                          <p className="text-xs text-slate-500">{quote.luggage} bags</p>
+                        </td>
+                        <td className="capitalize">{quote.vehicle_preference || '-'}</td>
+                        <td>
+                          <span className={`badge ${getQuoteStatusBadge(quote.status)}`}>
+                            {quote.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={quote.status}
+                              onChange={(e) => handleQuoteStatusChange(quote.id, e.target.value)}
+                              className="text-sm border border-slate-200 rounded px-2 py-1"
+                              data-testid={`quote-status-select-${quote.id}`}
+                            >
+                              <option value="new">New</option>
+                              <option value="responded">Responded</option>
+                              <option value="converted">Converted</option>
+                              <option value="closed">Closed</option>
+                            </select>
+                            <button
+                              onClick={() => navigate(`/admin/quote/${quote.id}`)}
+                              className="p-2 hover:bg-slate-100 rounded"
+                              title="View Details"
+                              data-testid={`view-quote-${quote.id}`}
+                            >
+                              <Eye size={18} className="text-slate-600" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuote(quote.id)}
+                              className="p-2 hover:bg-red-50 rounded"
+                              title="Delete Quote"
+                              data-testid={`delete-quote-${quote.id}`}
+                            >
+                              <Trash size={18} className="text-red-500" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Route Modal */}
