@@ -84,6 +84,54 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] Quick actions (Send Email, Call Customer links)
 - [x] Back to dashboard navigation
 
+### Phase 2 - UI/UX Improvements (Feb 18, 2026)
+
+#### Task 1: Airport IATA Search
+- [x] Static JSON database with 500+ global airports
+- [x] IATA code search prioritization (LHR, JFK, etc.)
+- [x] Airport results display with blue IATA badge
+- [x] Search by city, airport name, or aliases
+- [x] Top 3 results contain correct airport for common inputs
+
+#### Task 2: 24-Hour Advance Booking
+- [x] Validation blocks bookings less than 24 hours in advance
+- [x] Red warning message: "Pick-up must be at least 24 hours in advance."
+- [x] Continue button disabled when validation fails
+- [x] Works with user's timezone
+
+#### Task 3: "Starts From" Pricing
+- [x] Vehicle cards show "Starts from £XX.XX" instead of "Price £XX.XX"
+- [x] Payment summary shows "Estimated Total" with "Starts from" label
+- [x] Added note: "Final price may vary based on availability and route details."
+
+#### Task 4: Economy → Standard Rename
+- [x] Display label changed from "Economy" to "Standard Class"
+- [x] Updated on homepage fleet section
+- [x] Updated on booking page vehicle selection
+- [x] Backend vehicle type ID unchanged (economy) for compatibility
+
+#### Task 5: Icons Outside Inputs
+- [x] Icons moved outside input fields with colored circular backgrounds
+- [x] Green: Landing plane icon for pickup location
+- [x] Red: Map pin icon for dropoff location  
+- [x] Amber: Calendar icon for pickup date
+- [x] Blue: Clock icon for pickup time
+- [x] Responsive layout maintained on mobile/desktop
+
+#### Task 6: Phone Input with Country Code
+- [x] Country dropdown with flag emoji, name, and dial code
+- [x] Search by country name, ISO code, or calling code (+44, +359)
+- [x] Auto-detect user country from timezone/locale
+- [x] Default fallback to Bulgaria (+359)
+- [x] Phone number stored with country code prefix
+
+#### Task 7: Hero Background Upgrade
+- [x] New AI-generated premium hero image
+- [x] Features: London Heathrow airport, black Mercedes sedan, UK flag element
+- [x] Cinematic dusk lighting with golden hour tones
+- [x] Space for headline text on left side
+- [x] High resolution, professional commercial style
+
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
 
