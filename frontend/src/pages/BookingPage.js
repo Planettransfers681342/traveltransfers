@@ -281,7 +281,7 @@ export default function BookingPage() {
                       ))}
                     </ul>
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-sm text-slate-500">Price</span>
+                      <span className="text-sm text-slate-500">Starts from</span>
                       <span className="text-2xl font-semibold text-slate-900">
                         £{prices[vehicle.id]?.toFixed(2) || '---'}
                       </span>
