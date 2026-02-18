@@ -30,7 +30,7 @@ const FLEET_IMAGES = {
 };
 
 const VEHICLES = [
-  { id: "economy", name: "Economy Class", desc: "Comfortable sedans with A/C", passengers: 4, luggage: 3, features: ["Air conditioning", "Comfortable sedans", "Professional driver"] },
+  { id: "economy", name: "Standard Class", desc: "Comfortable sedans with A/C", passengers: 4, luggage: 3, features: ["Air conditioning", "Comfortable sedans", "Professional driver"] },
   { id: "business", name: "Business Class", desc: "Premium sedans with Wi-Fi", passengers: 4, luggage: 4, features: ["Wi-Fi available", "Premium sedans", "Complimentary water"] },
   { id: "group", name: "Group Transfer", desc: "Minivans & Minibuses", passengers: 8, luggage: 8, features: ["Extra space", "Minivans available", "Group friendly"] },
   { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, features: ["Climate control", "Comfortable seating", "Large capacity"] },
