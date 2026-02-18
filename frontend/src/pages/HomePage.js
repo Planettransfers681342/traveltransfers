@@ -29,7 +29,7 @@ const WHATSAPP_NUMBER = "447739476432";
 const WHATSAPP_MESSAGE = encodeURIComponent("Hi, I'd like to book a transfer with Planet Transfers");
 
 // Hero Images
-const HERO_IMAGE = "https://images.unsplash.com/photo-1733879075560-ff1f9ef8281c?crop=entropy&cs=srgb&fm=jpg&q=85";
+const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/cf3940c9-c123-47ad-8ffe-4b231693085c/images/0ef7f4b121298ed17248cd47747609cc65152aecc53a81bb18b4c438aaacb782.png";
 
 // Fleet Images
 const FLEET_IMAGES = {
