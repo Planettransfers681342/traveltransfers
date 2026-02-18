@@ -365,14 +365,13 @@ export default function QuoteRequest() {
                 {/* Phone */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number *</label>
-                  <input
-                    type="tel"
-                    name="passenger_phone"
+                  <PhoneInput
                     value={formData.passenger_phone}
                     onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="+44 7123 456789"
+                    name="passenger_phone"
+                    placeholder="Phone number"
                     required
+                    dataTestId="quote-phone"
                   />
                 </div>
 
