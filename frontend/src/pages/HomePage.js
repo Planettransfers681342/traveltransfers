@@ -241,57 +241,89 @@ export default function HomePage() {
                 {/* Pickup Location */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Pickup Location *</label>
-                  <AddressAutocomplete
-                    name="pickup_location"
-                    value={formData.pickup_location}
-                    onChange={handleInputChange}
-                    placeholder="Search pickup address, airport, hotel..."
-                    required
-                    dataTestId="pickup-location"
-                  />
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <AirplaneLanding size={20} className="text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <AddressAutocomplete
+                        name="pickup_location"
+                        value={formData.pickup_location}
+                        onChange={handleInputChange}
+                        placeholder="Airport, hotel, or address..."
+                        required
+                        dataTestId="pickup-location"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Dropoff Location */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Dropoff Location *</label>
-                  <AddressAutocomplete
-                    name="dropoff_location"
-                    value={formData.dropoff_location}
-                    onChange={handleInputChange}
-                    placeholder="Search dropoff address, airport, hotel..."
-                    required
-                    dataTestId="dropoff-location"
-                  />
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                      <MapPin size={20} className="text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <AddressAutocomplete
+                        name="dropoff_location"
+                        value={formData.dropoff_location}
+                        onChange={handleInputChange}
+                        placeholder="Airport, hotel, or address..."
+                        required
+                        dataTestId="dropoff-location"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Date and Time */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Pickup Date *</label>
-                    <input
-                      type="date"
-                      name="pickup_date"
-                      value={formData.pickup_date}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      data-testid="pickup-date"
-                    />
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                        <Calendar size={20} className="text-amber-600" />
+                      </div>
+                      <input
+                        type="date"
+                        name="pickup_date"
+                        value={formData.pickup_date}
+                        onChange={handleInputChange}
+                        className="input-field flex-1"
+                        required
+                        min={getMinDate()}
+                        data-testid="pickup-date"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Time *</label>
-                    <input
-                      type="time"
-                      name="pickup_time"
-                      value={formData.pickup_time}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                      data-testid="pickup-time"
-                    />
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Clock size={20} className="text-blue-600" />
+                      </div>
+                      <input
+                        type="time"
+                        name="pickup_time"
+                        value={formData.pickup_time}
+                        onChange={handleInputChange}
+                        className="input-field flex-1"
+                        required
+                        data-testid="pickup-time"
+                      />
+                    </div>
                   </div>
                 </div>
+
+                {/* 24-hour warning */}
+                {timeError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded" data-testid="time-error">
+                    <Warning size={18} weight="fill" />
+                    {timeError}
+                  </div>
+                )}
 
                 {/* Passengers & Luggage */}
                 <div className="relative">
@@ -303,8 +335,8 @@ export default function HomePage() {
                     data-testid="passengers-luggage-btn"
                   >
                     <span className="flex items-center gap-4">
-                      <span>{formData.passengers} Passengers</span>
-                      <span>{formData.luggage} Luggage</span>
+                      <span className="flex items-center gap-1"><Users size={16} className="text-slate-400" /> {formData.passengers}</span>
+                      <span className="flex items-center gap-1"><Suitcase size={16} className="text-slate-400" /> {formData.luggage}</span>
                     </span>
                     <CaretDown size={18} className="text-slate-400" />
                   </button>
@@ -334,7 +366,12 @@ export default function HomePage() {
                   )}
                 </div>
 
-                <button type="submit" className="btn-gold w-full flex items-center justify-center gap-2 relative z-0" data-testid="continue-btn">
+                <button 
+                  type="submit" 
+                  className="btn-gold w-full flex items-center justify-center gap-2 relative z-0 disabled:opacity-50 disabled:cursor-not-allowed" 
+                  data-testid="continue-btn"
+                  disabled={!isFormValid()}
+                >
                   Continue to Vehicle Selection
                   <ArrowRight size={20} />
                 </button>
