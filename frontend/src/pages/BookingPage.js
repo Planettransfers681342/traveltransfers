@@ -514,10 +514,13 @@ export default function BookingPage() {
                   </div>
                   <div className="border-t border-slate-200 mt-4 pt-4">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-slate-900">Total</span>
-                      <span className="text-3xl font-semibold text-slate-900">£{getSelectedPrice().toFixed(2)}</span>
+                      <span className="font-semibold text-slate-900">Estimated Total</span>
+                      <div className="text-right">
+                        <span className="text-xs text-slate-500 block">Starts from</span>
+                        <span className="text-3xl font-semibold text-slate-900">£{getSelectedPrice().toFixed(2)}</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">Including all taxes and fees</p>
+                    <p className="text-xs text-slate-500 mt-2">Final price may vary based on availability and route details.</p>
                   </div>
                   <button 
                     onClick={handleSubmit}
