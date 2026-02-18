@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Spinner, X } from '@phosphor-icons/react';
+import { Spinner, X, AirplaneTakeoff } from '@phosphor-icons/react';
+import { searchAirports, formatAirportDisplay } from '@/data/airports';
 
 export const AddressAutocomplete = ({ 
   value, 
@@ -7,7 +8,9 @@ export const AddressAutocomplete = ({
   placeholder = "Search address...",
   name,
   required = false,
-  dataTestId
+  dataTestId,
+  icon = null,
+  iconColor = "text-slate-400"
 }) => {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
@@ -34,37 +37,64 @@ export const AddressAutocomplete = ({
   }, []);
 
   const searchAddresses = async (query) => {
-    if (!query || query.length < 3) {
+    if (!query || query.length < 2) {
       setSuggestions([]);
       return;
     }
 
     setIsLoading(true);
+    
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-        {
-          headers: {
-            'Accept-Language': 'en',
-          }
-        }
-      );
-      const data = await response.json();
-      
-      const formattedSuggestions = data.map(item => ({
-        id: item.place_id,
-        display_name: item.display_name,
-        short_name: formatShortAddress(item),
-        lat: item.lat,
-        lon: item.lon,
-        type: item.type,
-        address: item.address
+      // Search airports first (prioritized)
+      const airportResults = searchAirports(query, 5);
+      const airportSuggestions = airportResults.map(airport => ({
+        id: `airport-${airport.iata}`,
+        display_name: formatAirportDisplay(airport),
+        short_name: formatAirportDisplay(airport),
+        type: 'airport',
+        iata: airport.iata,
+        isAirport: true
       }));
       
-      setSuggestions(formattedSuggestions);
+      // If query looks like IATA code (3 letters), prioritize airports heavily
+      const isLikelyIATA = /^[a-z]{3}$/i.test(query.trim());
+      
+      // Search regular addresses via OpenStreetMap (but not for IATA codes)
+      let addressSuggestions = [];
+      if (!isLikelyIATA && query.length >= 3) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+            {
+              headers: {
+                'Accept-Language': 'en',
+              }
+            }
+          );
+          const data = await response.json();
+          
+          addressSuggestions = data.map(item => ({
+            id: item.place_id,
+            display_name: item.display_name,
+            short_name: formatShortAddress(item),
+            lat: item.lat,
+            lon: item.lon,
+            type: item.type,
+            address: item.address,
+            isAirport: false
+          }));
+        } catch (error) {
+          console.error('Address search error:', error);
+        }
+      }
+      
+      // Combine results: airports first, then addresses
+      const combined = [...airportSuggestions, ...addressSuggestions].slice(0, 8);
+      
+      setSuggestions(combined);
       setShowSuggestions(true);
     } catch (error) {
-      console.error('Address search error:', error);
+      console.error('Search error:', error);
       setSuggestions([]);
     } finally {
       setIsLoading(false);
@@ -106,7 +136,7 @@ export const AddressAutocomplete = ({
     
     debounceRef.current = setTimeout(() => {
       searchAddresses(newValue);
-    }, 300);
+    }, 200);
   };
 
   const handleSelectSuggestion = (suggestion) => {
@@ -117,7 +147,9 @@ export const AddressAutocomplete = ({
         value: suggestion.short_name,
         fullAddress: suggestion.display_name,
         lat: suggestion.lat,
-        lon: suggestion.lon
+        lon: suggestion.lon,
+        isAirport: suggestion.isAirport,
+        iata: suggestion.iata
       }
     });
     setShowSuggestions(false);
@@ -160,7 +192,12 @@ export const AddressAutocomplete = ({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <div className="relative">
+      <div className="relative flex items-center">
+        {icon && (
+          <div className={`absolute left-4 ${iconColor} pointer-events-none z-10`}>
+            {icon}
+          </div>
+        )}
         <input
           type="text"
           name={name}
@@ -169,7 +206,7 @@ export const AddressAutocomplete = ({
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
-          className="input-field pr-10"
+          className={`input-field pr-10 ${icon ? 'pl-12' : ''}`}
           required={required}
           autoComplete="off"
           data-testid={dataTestId}
@@ -193,7 +230,7 @@ export const AddressAutocomplete = ({
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg z-50 max-h-64 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg z-50 max-h-80 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <div
               key={suggestion.id}
@@ -202,13 +239,25 @@ export const AddressAutocomplete = ({
                 index === selectedIndex ? 'bg-slate-100' : 'hover:bg-slate-50'
               }`}
             >
-              <div>
-                <p className="text-sm font-medium text-slate-900">
-                  {suggestion.short_name}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                  {suggestion.display_name}
-                </p>
+              <div className="flex items-start gap-3">
+                {suggestion.isAirport && (
+                  <div className="flex-shrink-0 mt-0.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                      <AirplaneTakeoff size={12} weight="bold" />
+                      {suggestion.iata}
+                    </span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {suggestion.short_name}
+                  </p>
+                  {!suggestion.isAirport && suggestion.display_name !== suggestion.short_name && (
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                      {suggestion.display_name}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -216,9 +265,9 @@ export const AddressAutocomplete = ({
       )}
 
       {/* No results message */}
-      {showSuggestions && !isLoading && inputValue.length >= 3 && suggestions.length === 0 && (
+      {showSuggestions && !isLoading && inputValue.length >= 2 && suggestions.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg z-50 p-4 text-center text-sm text-slate-500">
-          No addresses found. Try a different search.
+          No airports or addresses found. Try a different search.
         </div>
       )}
     </div>
