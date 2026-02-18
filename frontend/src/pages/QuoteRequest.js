@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CarSimple, X, CheckCircle, Spinner } from '@phosphor-icons/react';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { PhoneInput } from '@/components/PhoneInput';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
