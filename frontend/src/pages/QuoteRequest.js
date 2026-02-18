@@ -308,7 +308,7 @@ export default function QuoteRequest() {
                     className="input-field"
                   >
                     <option value="">No preference</option>
-                    <option value="Economy">Economy Class (Sedan)</option>
+                    <option value="Standard">Standard Class (Sedan)</option>
                     <option value="Business">Business Class (Premium Sedan)</option>
                     <option value="Group">Group Transfer (Van/Minibus)</option>
                     <option value="Bus">Full Size Bus (Coach)</option>
