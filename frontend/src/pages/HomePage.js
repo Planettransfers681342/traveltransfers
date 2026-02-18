@@ -147,7 +147,7 @@ export default function HomePage() {
   ];
 
   const fleet = [
-    { id: "economy", name: "Economy Class", desc: "Perfect for couples or small families", passengers: 4, luggage: 3, image: FLEET_IMAGES.economy },
+    { id: "economy", name: "Standard Class", desc: "Perfect for couples or small families", passengers: 4, luggage: 3, image: FLEET_IMAGES.economy },
     { id: "business", name: "Business Class", desc: "Luxury vehicles for business travelers", passengers: 4, luggage: 4, image: FLEET_IMAGES.business },
     { id: "group", name: "Group Transfer", desc: "Spacious vans for larger groups", passengers: 8, luggage: 8, image: FLEET_IMAGES.group },
     { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, image: FLEET_IMAGES.bus },
