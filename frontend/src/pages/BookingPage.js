@@ -347,19 +347,14 @@ export default function BookingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number *</label>
-                    <div className="relative">
-                      <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="tel"
-                        name="passenger_phone"
-                        value={bookingData.passenger_phone}
-                        onChange={handleInputChange}
-                        className="input-field pl-12"
-                        placeholder="+44 7123 456789"
-                        required
-                        data-testid="passenger-phone"
-                      />
-                    </div>
+                    <PhoneInput
+                      value={bookingData.passenger_phone}
+                      onChange={handleInputChange}
+                      name="passenger_phone"
+                      placeholder="Phone number"
+                      required
+                      dataTestId="passenger-phone"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Flight Number (Optional)</label>
