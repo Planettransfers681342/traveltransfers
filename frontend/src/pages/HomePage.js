@@ -70,23 +70,73 @@ export default function HomePage() {
     luggage: 2
   });
   const [showPassengerDropdown, setShowPassengerDropdown] = useState(false);
+  const [timeError, setTimeError] = useState('');
 
   useEffect(() => {
     // Seed data on first load
     axios.post(`${API}/seed`).catch(() => {});
   }, []);
 
+  // Validate 24-hour rule
+  const validatePickupTime = (date, time) => {
+    if (!date || !time) return true; // Don't show error if fields are empty
+    
+    const now = new Date();
+    const pickupDateTime = new Date(`${date}T${time}`);
+    const minPickupTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    
+    if (pickupDateTime < minPickupTime) {
+      setTimeError('Pick-up must be at least 24 hours in advance.');
+      return false;
+    }
+    
+    setTimeError('');
+    return true;
+  };
+
+  // Get minimum date (today)
+  const getMinDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const newFormData = { ...formData, [name]: value };
+    setFormData(newFormData);
+    
+    // Validate time when date or time changes
+    if (name === 'pickup_date' || name === 'pickup_time') {
+      validatePickupTime(
+        name === 'pickup_date' ? value : formData.pickup_date,
+        name === 'pickup_time' ? value : formData.pickup_time
+      );
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Final validation before submit
+    if (!validatePickupTime(formData.pickup_date, formData.pickup_time)) {
+      return;
+    }
+    
     const bookingData = {
       ...formData,
       trip_type: tripType
     };
     navigate('/booking', { state: bookingData });
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.pickup_location &&
+      formData.dropoff_location &&
+      formData.pickup_date &&
+      formData.pickup_time &&
+      !timeError
+    );
   };
 
   const features = [
