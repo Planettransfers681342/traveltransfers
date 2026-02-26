@@ -183,10 +183,17 @@ export default function HomePage() {
             <CarSimple size={32} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <a 
+              href="/book"
+              className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"
+              data-testid="book-now-btn"
+            >
+              Book Now
+            </a>
             <button 
               onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
-              className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"
+              className="btn-secondary py-3 px-6 flex items-center gap-2 text-sm"
               data-testid="request-quote-btn"
             >
               Request Quote
