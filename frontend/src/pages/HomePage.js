@@ -228,53 +228,8 @@ export default function HomePage() {
 
             {/* Booking Widget */}
             <div className="booking-widget glass-card p-8 fade-in fade-in-delay-2" id="booking-form" data-testid="booking-widget">
-              <h2 className="text-2xl font-semibold text-slate-900 mb-4">Book Your Transfer</h2>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-6">Book Your Transfer</h2>
               
-              {/* Booking Mode Toggle */}
-              <div className="flex mb-6 bg-slate-100 p-1 rounded-sm">
-                <button 
-                  onClick={() => setBookingMode('instant')}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${bookingMode === 'instant' ? 'bg-[#d4af37] text-white shadow-sm' : 'text-slate-500'}`}
-                  data-testid="booking-mode-instant"
-                >
-                  Book & Pay Now
-                </button>
-                <button 
-                  onClick={() => setBookingMode('quote')}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${bookingMode === 'quote' ? 'bg-[#d4af37] text-white shadow-sm' : 'text-slate-500'}`}
-                  data-testid="booking-mode-quote"
-                >
-                  Get Quote
-                </button>
-              </div>
-
-              {/* iWay Instant Booking */}
-              {bookingMode === 'instant' && (
-                <div className="iway-booking-container" data-testid="iway-booking">
-                  <iframe
-                    width="100%"
-                    height="550"
-                    id="iway-frame"
-                    name="iway-frame"
-                    src="https://iway.io/steporder/framens?userID=143708&lang=en&currency=EUR&pos=iframe"
-                    onLoad={(e) => {
-                      if (typeof window.FrameResize !== 'undefined') {
-                        window.FrameResize.registerFrame(e.target);
-                      }
-                    }}
-                    frameBorder="0"
-                    style={{ borderRadius: '4px', minHeight: '500px' }}
-                    title="Book Airport Transfer"
-                  />
-                  <p className="text-xs text-slate-500 text-center mt-3">
-                    Secure booking powered by iWay • Instant confirmation
-                  </p>
-                </div>
-              )}
-
-              {/* Custom Quote Form */}
-              {bookingMode === 'quote' && (
-                <>
               {/* Trip Type Toggle */}
               <div className="flex mb-6 bg-slate-100 p-1 rounded-sm">
                 <button 
