@@ -61,7 +61,6 @@ const POPULAR_ROUTES = [
 export default function HomePage() {
   const navigate = useNavigate();
   const [tripType, setTripType] = useState('one-way');
-  const [bookingMode, setBookingMode] = useState('instant'); // 'instant' for iWay, 'quote' for custom form
   const [formData, setFormData] = useState({
     pickup_location: '',
     dropoff_location: '',
@@ -76,16 +75,6 @@ export default function HomePage() {
   useEffect(() => {
     // Seed data on first load
     axios.post(`${API}/seed`).catch(() => {});
-    
-    // Load iWay iframe resize script
-    const script = document.createElement('script');
-    script.src = 'https://iway.io/js/plugins/iframe.resize.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    return () => {
-      document.body.removeChild(script);
-    };
   }, []);
 
   // Validate 24-hour rule
