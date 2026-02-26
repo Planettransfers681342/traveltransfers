@@ -432,6 +432,8 @@ export default function HomePage() {
                   <ArrowRight size={20} />
                 </button>
               </form>
+              </>
+              )}
             </div>
           </div>
         </div>
