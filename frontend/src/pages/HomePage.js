@@ -147,10 +147,10 @@ export default function HomePage() {
   ];
 
   const fleet = [
-    { id: "economy", name: "Standard Class", desc: "Perfect for couples or small families", passengers: 4, luggage: 3, image: FLEET_IMAGES.economy },
-    { id: "business", name: "Business Class", desc: "Luxury vehicles for business travelers", passengers: 4, luggage: 4, image: FLEET_IMAGES.business },
-    { id: "group", name: "Group Transfer", desc: "Spacious vans for larger groups", passengers: 8, luggage: 8, image: FLEET_IMAGES.group },
-    { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, image: FLEET_IMAGES.bus },
+    { id: "economy", name: "Standard Class", desc: "Perfect for couples or small families", passengers: 4, luggage: 3, image: FLEET_IMAGES.economy, alt: "Standard airport transfer vehicle sedan" },
+    { id: "business", name: "Business Class", desc: "Luxury vehicles for business travelers", passengers: 4, luggage: 4, image: FLEET_IMAGES.business, alt: "Business class airport transfer sedan" },
+    { id: "group", name: "Group Transfer", desc: "Spacious vans for larger groups", passengers: 8, luggage: 8, image: FLEET_IMAGES.group, alt: "Airport transfer minivan for groups" },
+    { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, image: FLEET_IMAGES.bus, alt: "Large coach for airport group transfers" },
   ];
 
   const testimonials = [
@@ -418,7 +418,13 @@ export default function HomePage() {
             {fleet.map((vehicle, idx) => (
               <div key={vehicle.id} className="fleet-card fade-in" style={{ animationDelay: `${idx * 0.1}s` }} data-testid={`fleet-card-${vehicle.id}`}>
                 <div className="overflow-hidden">
-                  <img src={vehicle.image} alt={vehicle.name} />
+                  <img 
+                    src={vehicle.image} 
+                    alt={vehicle.alt}
+                    loading="lazy"
+                    width="400"
+                    height="267"
+                  />
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-slate-900 mb-2">{vehicle.name}</h3>
@@ -434,6 +440,48 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Section - SEO Task 7 */}
+      <section className="py-16 bg-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-semibold mb-4">Why Choose Planet Transfers</h2>
+            <p className="text-slate-400">Trusted by travelers worldwide</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">Professional Licensed Drivers</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">Fixed Transparent Pricing</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Airplane size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">Flight Monitoring Included</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Phone size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">24/7 Customer Support</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">Free Cancellation</p>
+            </div>
           </div>
         </div>
       </section>

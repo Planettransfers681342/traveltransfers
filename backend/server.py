@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends
+from fastapi.responses import PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -781,6 +782,60 @@ async def seed_data():
             await db.route_prices.insert_one(doc)
     
     return {"message": "Seed data created"}
+
+# ==================== SITEMAP ====================
+
+# SEO destination and route data
+SEO_DESTINATIONS = ['sofia', 'london', 'paris', 'dubai', 'zurich']
+SEO_ROUTES = ['zurich-to-st-moritz', 'sofia-airport-to-bansko', 'paris-airport-to-disneyland']
+
+@app.get("/sitemap.xml", response_class=PlainTextResponse)
+async def sitemap():
+    """Generate dynamic sitemap for SEO"""
+    base_url = "https://planettransfers.online"
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    urls = [
+        # Main pages
+        {"loc": f"{base_url}/", "priority": "1.0", "changefreq": "daily"},
+        {"loc": f"{base_url}/book", "priority": "0.9", "changefreq": "daily"},
+        {"loc": f"{base_url}/quote", "priority": "0.8", "changefreq": "weekly"},
+        {"loc": f"{base_url}/terms-conditions", "priority": "0.3", "changefreq": "monthly"},
+        {"loc": f"{base_url}/privacy-policy", "priority": "0.3", "changefreq": "monthly"},
+        {"loc": f"{base_url}/cookie-policy", "priority": "0.3", "changefreq": "monthly"},
+    ]
+    
+    # Add destination pages
+    for dest in SEO_DESTINATIONS:
+        urls.append({
+            "loc": f"{base_url}/airport-transfer/{dest}",
+            "priority": "0.8",
+            "changefreq": "weekly"
+        })
+    
+    # Add route pages
+    for route in SEO_ROUTES:
+        urls.append({
+            "loc": f"{base_url}/transfer/{route}",
+            "priority": "0.8",
+            "changefreq": "weekly"
+        })
+    
+    # Build XML
+    xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for url in urls:
+        xml_content += '  <url>\n'
+        xml_content += f'    <loc>{url["loc"]}</loc>\n'
+        xml_content += f'    <lastmod>{today}</lastmod>\n'
+        xml_content += f'    <changefreq>{url["changefreq"]}</changefreq>\n'
+        xml_content += f'    <priority>{url["priority"]}</priority>\n'
+        xml_content += '  </url>\n'
+    
+    xml_content += '</urlset>'
+    
+    return PlainTextResponse(content=xml_content, media_type="application/xml")
 
 # Include the router in the main app
 app.include_router(api_router)

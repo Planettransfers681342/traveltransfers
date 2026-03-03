@@ -3,44 +3,97 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="description" content="A product of emergent.sh" />
+        <meta name="theme-color" content="#d4af37" />
+        
+        <!-- Primary SEO Meta Tags -->
+        <title>Private Airport Transfers Worldwide | Planet Transfers</title>
+        <meta name="description" content="Book reliable private airport transfers worldwide. Professional drivers, fixed prices, and comfortable vehicles for airport, hotel, and private address transfers." />
+        <meta name="keywords" content="airport transfer, private transfer, airport taxi, chauffeur service, airport pickup, hotel transfer" />
+        <meta name="author" content="Planet Transfers" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://planettransfers.online/" />
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://planettransfers.online/" />
+        <meta property="og:title" content="Private Airport Transfers Worldwide | Planet Transfers" />
+        <meta property="og:description" content="Book reliable private airport transfers worldwide. Professional drivers, fixed prices, and comfortable vehicles for airport, hotel, and private address transfers." />
+        <meta property="og:image" content="https://planettransfers.online/og-image.jpg" />
+        <meta property="og:site_name" content="Planet Transfers" />
+        <meta property="og:locale" content="en_US" />
+        
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://planettransfers.online/" />
+        <meta name="twitter:title" content="Private Airport Transfers Worldwide | Planet Transfers" />
+        <meta name="twitter:description" content="Book reliable private airport transfers worldwide. Professional drivers, fixed prices, and comfortable vehicles." />
+        <meta name="twitter:image" content="https://planettransfers.online/og-image.jpg" />
+        
+        <!-- Google Search Console Verification (replace content with your verification code) -->
+        <meta name="google-site-verification" content="TO_BE_ADDED_LATER" />
+        
+        <!-- Structured Data - TransportService Schema -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "TransportService",
+            "name": "Planet Transfers",
+            "description": "Private airport transfers worldwide with professional drivers and fixed prices",
+            "url": "https://planettransfers.online",
+            "logo": "https://planettransfers.online/logo.png",
+            "serviceType": "Airport Transfer",
+            "provider": {
+                "@type": "Organization",
+                "name": "Planet Transfers",
+                "url": "https://planettransfers.online"
+            },
+            "areaServed": {
+                "@type": "Place",
+                "name": "Worldwide"
+            },
+            "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "Airport Transfer Services",
+                "itemListElement": [
+                    {
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Service",
+                            "name": "Standard Class Transfer"
+                        }
+                    },
+                    {
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Service",
+                            "name": "Business Class Transfer"
+                        }
+                    },
+                    {
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Service",
+                            "name": "Group Transfer"
+                        }
+                    }
+                ]
+            }
+        }
+        </script>
+        
+        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
-        <!--
-        manifest.json provides metadata used when your web app is installed on a
-        user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-        -->
-        <!--
-        Notice the use of %PUBLIC_URL% in the tags above.
-        It will be replaced with the URL of the `public` folder during the build.
-        Only files inside the `public` folder can be referenced from the HTML.
-
-        Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-        work correctly both with client-side routing and a non-root public URL.
-        Learn how to configure a non-root public URL by running `npm run build`.
-        -->
-        <title>Emergent | Fullstack App</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+        
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
-        <!--
-        These two scripts have been added for the Visual Edits, please do not edit or remove them
-        -->
         <script>
-            // Only load visual edit scripts when inside an iframe
             if (window.self !== window.top) {
-                // Load debug monitor script
                 var debugMonitorScript = document.createElement('script');
                 debugMonitorScript.src = 'https://assets.emergent.sh/scripts/debug-monitor.js';
                 document.head.appendChild(debugMonitorScript);
-
-                // Configure Tailwind
                 window.tailwind = window.tailwind || {};
-                tailwind.config = {
-                    corePlugins: { preflight: false },
-                };
-
-                // Load Tailwind CDN
+                tailwind.config = { corePlugins: { preflight: false } };
                 var tailwindScript = document.createElement('script');
                 tailwindScript.src = 'https://cdn.tailwindcss.com';
                 document.head.appendChild(tailwindScript);
