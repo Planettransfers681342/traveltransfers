@@ -256,6 +256,11 @@ async def health_check():
     """Health check endpoint for Kubernetes readiness probe"""
     return {"status": "healthy"}
 
+@api_router.get("/health")
+async def api_health_check():
+    """Health check endpoint under /api prefix"""
+    return {"status": "healthy"}
+
 @api_router.get("/")
 async def root():
     return {"message": "Planet Transfers API"}
