@@ -206,6 +206,15 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] Backend /api/iway/book updated: terminal_number, adults_count, children_count (mapped to adults_amount/children_amount in iWay)
 - [x] Sign name appended to comment field for iWay
 
+#### P0 Data Persistence Bug Fix — Full Booking Flow (Mar 18, 2026)
+- [x] **Root cause 1 fixed**: `showFlightFields` was conditional on iWay API returning `types=['airport']` which was unreliable. Now always `true` — flight/terminal/greeting sign fields always visible.
+- [x] **Root cause 2 fixed**: sessionStorage backup added in `IWayResultsPage.handleBook` → `PassengerDetailsPage` restores state from sessionStorage on mount, surviving page refresh.
+- [x] **Root cause 3 fixed**: Guard replaced `navigate()` during render with `<Navigate to="/" replace />` (correct React Router v6 pattern).
+- [x] **Enhanced airport detection**: `fromIsAirport` now triple-checks: iWay types + address string + pickup_location string — all containing "airport".
+- [x] **Capacity validation**: `IWayResultsPage` shows disabled button + warning when `passengers > vehicle.capacity`. `PassengerDetailsPage` shows inline warning and blocks form submit.
+- [x] **Trip Summary enriched**: Luggage count and round-trip indicator added to sidebar summary.
+- [x] **Backend uses FINAL edited values**: All form fields in Transfer Details are editable; booking payload uses the final state values.
+
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
 
