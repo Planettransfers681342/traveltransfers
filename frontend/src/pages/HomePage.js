@@ -35,7 +35,7 @@ const WHATSAPP_NUMBER = "447739476432";
 const WHATSAPP_MESSAGE = encodeURIComponent("Hi, I'd like to book a transfer with Planet Transfers");
 
 // Hero Images
-const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/cf3940c9-c123-47ad-8ffe-4b231693085c/images/0ef7f4b121298ed17248cd47747609cc65152aecc53a81bb18b4c438aaacb782.png";
+const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/bdf6f771-1f03-411b-9d3c-236b42d26b33/images/cc81389a63562a8e56aeb8add76427b4e10b593ddd3d0c4cf0206c0bf4098405.png";
 
 // Fleet Images
 const FLEET_IMAGES = {
