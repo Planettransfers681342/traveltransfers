@@ -1,15 +1,34 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { CarSimple, ArrowLeft, ShieldCheck, Clock, CreditCard } from '@phosphor-icons/react';
 
+const IWAY_USER_ID = '143708';
+
 export default function BookNowPage() {
+  const [searchParams] = useSearchParams();
+  const fromPlaceId = searchParams.get('from_place_id');
+  const toPlaceId = searchParams.get('to_place_id');
+  const carClassId = searchParams.get('car_class_id');
+
+  // Build the iWay iframe URL with optional pre-filled params
+  const buildIwayUrl = () => {
+    const params = new URLSearchParams({
+      userID: IWAY_USER_ID,
+      lang: 'en',
+      currency: 'GBP',
+      pos: 'iframe',
+    });
+    if (fromPlaceId) params.set('from_place_id', fromPlaceId);
+    if (toPlaceId) params.set('to_place_id', toPlaceId);
+    if (carClassId) params.set('car_class_id', carClassId);
+    return `https://iway.io/steporder/framens?${params.toString()}`;
+  };
+
   useEffect(() => {
-    // Load iWay iframe resize script
     const script = document.createElement('script');
     script.src = 'https://iway.io/js/plugins/iframe.resize.js';
     script.async = true;
     document.body.appendChild(script);
-    
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -71,7 +90,7 @@ export default function BookNowPage() {
             height="900"
             id="iway-frame"
             name="iway-frame"
-            src="https://iway.io/steporder/framens?userID=143708&lang=en&currency=EUR&pos=iframe"
+            src={buildIwayUrl()}
             onLoad={(e) => {
               if (typeof window.FrameResize !== 'undefined') {
                 window.FrameResize.registerFrame(e.target);

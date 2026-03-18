@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "@/pages/HomePage";
 import BookingPage from "@/pages/BookingPage";
 import BookNowPage from "@/pages/BookNowPage";
+import IWayResultsPage from "@/pages/IWayResultsPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import AdminLogin from "@/pages/AdminLogin";
@@ -25,6 +26,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/booking" element={<BookingPage />} />
           <Route path="/book" element={<BookNowPage />} />
+          <Route path="/results" element={<IWayResultsPage />} />
           <Route path="/quote" element={<QuoteRequest />} />
           
           {/* SEO Destination Pages */}

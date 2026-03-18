@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone
+import httpx
 from emergentintegrations.payments.stripe.checkout import (
     StripeCheckout, 
     CheckoutSessionResponse, 
@@ -841,6 +842,87 @@ async def sitemap():
     xml_content += '</urlset>'
     
     return PlainTextResponse(content=xml_content, media_type="application/xml")
+
+
+# ==================== IWAY PROXY ====================
+
+IWAY_USER_ID = "143708"
+IWAY_API_BASE = "https://ng-api.iwayex.com"
+
+@api_router.get("/iway/search")
+async def iway_search(pickup: str, dropoff: str, currency: str = "GBP", lang: str = "en"):
+    """Proxy iWay transfer search: geocode both locations then fetch vehicle prices."""
+    async with httpx.AsyncClient(timeout=15.0) as client_h:
+        # Step 1: Find place IDs
+        from_resp = await client_h.get(
+            f"{IWAY_API_BASE}/v1/places/find",
+            params={"term": pickup, "lang": lang, "user_id": IWAY_USER_ID}
+        )
+        to_resp = await client_h.get(
+            f"{IWAY_API_BASE}/v1/places/find",
+            params={"term": dropoff, "lang": lang, "user_id": IWAY_USER_ID}
+        )
+        from_data = from_resp.json()
+        to_data = to_resp.json()
+
+        from_places = from_data.get("result") or []
+        to_places = to_data.get("result") or []
+
+        if not from_places:
+            raise HTTPException(status_code=404, detail=f"Pickup location not found: {pickup}")
+        if not to_places:
+            raise HTTPException(status_code=404, detail=f"Dropoff location not found: {dropoff}")
+
+        from_place = from_places[0]
+        to_place = to_places[0]
+
+        # Step 2: Get geometry for both places
+        from_geo_resp = await client_h.get(
+            f"{IWAY_API_BASE}/v1/places/{from_place['place_id']}",
+            params={"user_id": IWAY_USER_ID, "lang": lang}
+        )
+        to_geo_resp = await client_h.get(
+            f"{IWAY_API_BASE}/v1/places/{to_place['place_id']}",
+            params={"user_id": IWAY_USER_ID, "lang": lang}
+        )
+        from_geo = from_geo_resp.json().get("result", {}).get("geometry", {}).get("location", {})
+        to_geo = to_geo_resp.json().get("result", {}).get("geometry", {}).get("location", {})
+
+        if not from_geo or not to_geo:
+            raise HTTPException(status_code=404, detail="Could not resolve locations")
+
+        from_point = f"{from_geo['lat']},{from_geo['lng']}"
+        to_point = f"{to_geo['lat']},{to_geo['lng']}"
+
+        # Step 3: Fetch prices
+        prices_resp = await client_h.get(
+            f"{IWAY_API_BASE}/v1/prices",
+            params={
+                "lang": lang,
+                "user_id": IWAY_USER_ID,
+                "currency": currency,
+                "start_place_point": from_point,
+                "finish_place_point": to_point,
+                "platform": "3"
+            }
+        )
+        prices_data = prices_resp.json()
+        vehicles = prices_data.get("result") or []
+
+    return {
+        "vehicles": vehicles,
+        "from_place": {
+            "place_id": from_place["place_id"],
+            "description": from_place.get("description", pickup),
+            "name": from_place.get("structured_formatting", {}).get("main_text", pickup)
+        },
+        "to_place": {
+            "place_id": to_place["place_id"],
+            "description": to_place.get("description", dropoff),
+            "name": to_place.get("structured_formatting", {}).get("main_text", dropoff)
+        }
+    }
+
 
 # Include the router in the main app
 app.include_router(api_router)

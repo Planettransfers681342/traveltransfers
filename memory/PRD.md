@@ -11,6 +11,7 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - **Backend**: FastAPI with MongoDB
 - **Payment**: Stripe integration via emergentintegrations library
 - **Auth**: Simple password-based admin authentication
+- **iWay**: Direct API integration via ng-api.iwayex.com (user ID: 143708)
 
 ## User Personas
 1. **Travelers**: Book airport transfers with vehicle selection and secure payment
@@ -113,7 +114,7 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 #### Task 5: Icons Outside Inputs
 - [x] Icons moved outside input fields with colored circular backgrounds
 - [x] Green: Landing plane icon for pickup location
-- [x] Red: Map pin icon for dropoff location  
+- [x] Red: Map pin icon for dropoff location
 - [x] Amber: Calendar icon for pickup date
 - [x] Blue: Clock icon for pickup time
 - [x] Responsive layout maintained on mobile/desktop
@@ -134,84 +135,40 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 
 ### Phase 3 - SEO & Visibility Setup (Mar 3, 2026)
 
-#### Task 1: Basic SEO Structure
-- [x] Homepage title: "Private Airport Transfers Worldwide | Planet Transfers"
-- [x] Meta description for all pages
-- [x] Canonical URLs
-- [x] Open Graph tags (og:title, og:description, og:image, og:url)
-- [x] Twitter Card meta tags
-- [x] Google Search Console verification meta tag placeholder
-
-#### Task 2: Sitemap
-- [x] Static sitemap.xml at /sitemap.xml
-- [x] Includes all main pages, destination pages, route pages
-- [x] Priority and changefreq settings
-
-#### Task 3: Robots.txt
-- [x] /robots.txt with proper directives
-- [x] Sitemap reference
-- [x] Admin/payment pages disallowed
-- [x] SEO pages allowed
-
-#### Task 4: Google Search Console Ready
-- [x] Meta tag placeholder in index.html
-- [x] Ready for verification code
-
-#### Task 5: Destination SEO Pages
-- [x] Reusable AirportTransferPage template
-- [x] H1 title, description, booking forms
-- [x] Vehicle categories section
-- [x] FAQ section with expandable items
+#### Task 1-12: Full SEO Implementation
+- [x] Homepage meta tags, Open Graph, Twitter Cards
+- [x] Static sitemap.xml
+- [x] robots.txt
+- [x] Google Search Console verification meta tag
+- [x] Destination SEO pages (/airport-transfer/:city)
+- [x] Route SEO pages (/transfer/:route)
 - [x] Trust section
-- [x] Created pages:
-  - /airport-transfer/sofia
-  - /airport-transfer/london
-  - /airport-transfer/paris
-  - /airport-transfer/dubai
-  - /airport-transfer/zurich
+- [x] Image SEO (alt tags, lazy loading)
+- [x] Structured Data (TransportService schema)
+- [x] SEO-friendly URL structure
+- [x] seoData.js for scalable page generation
 
-#### Task 6: Route SEO Pages
-- [x] Reusable TransferRoutePage template
-- [x] Route info cards (distance, duration)
-- [x] Booking forms (iWay + Quote)
-- [x] Route highlights
-- [x] Created pages:
-  - /transfer/zurich-to-st-moritz
-  - /transfer/sofia-airport-to-bansko
-  - /transfer/paris-airport-to-disneyland
+### Phase 4 - Production-Ready Upgrades (Mar 18, 2026)
 
-#### Task 7: Trust Section
-- [x] Professional Licensed Drivers
-- [x] Fixed Transparent Pricing
-- [x] Flight Monitoring Included
-- [x] 24/7 Customer Support
-- [x] Free Cancellation
+#### JSX Blocker Fix
+- [x] Fixed adjacent JSX elements error in HomePage.js (orphaned fragment removed)
 
-#### Task 8: Image SEO
-- [x] Alt tags on all vehicle images
-- [x] Descriptive alt text for accessibility
-
-#### Task 9: Performance
-- [x] Lazy loading for images
-- [x] Width/height attributes to prevent CLS
-- [x] Lightweight page templates
-
-#### Task 10: URL Structure
-- [x] SEO-friendly URLs: /airport-transfer/{city}
-- [x] SEO-friendly routes: /transfer/{route}
-- [x] No dynamic parameters
-
-#### Task 11: Structured Data
-- [x] TransportService schema on homepage
-- [x] Service schema on destination pages
-- [x] Provider organization info
-- [x] Area served information
-
-#### Task 12: Future Scalability
-- [x] seoData.js with destinations and routes arrays
-- [x] Easy to add new cities by adding to DESTINATIONS array
-- [x] Easy to add new routes by adding to ROUTES array
-- [x] Reusable page templates
+#### iWay Direct API Integration (CRITICAL)
+- [x] Discovered iWay API at ng-api.iwayex.com
+- [x] Backend proxy endpoint: GET /api/iway/search
+  - Geocodes pickup/dropoff via /v1/places/find
+  - Resolves geometry via /v1/places/{place_id}
+  - Fetches live prices via /v1/prices (returns 6 vehicle classes)
+- [x] Frontend results page: /results (IWayResultsPage.js)
+  - Route summary bar
+  - Vehicle cards: Standard, Business, First, Minivan, Minivan VIP, Minibus
+  - Live prices, capacity, services (Meeting sign, free waiting, etc.)
+  - Travel time and distance per route
+  - "Book Now" per vehicle → redirects to /book with place_ids
+- [x] Homepage form now submits to /results (instead of /booking)
+- [x] BookNowPage updated to accept from_place_id/to_place_id/car_class_id URL params
+  - iWay iframe pre-filled with search data
+- [x] Button text updated: "Search Available Vehicles"
 
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
@@ -254,23 +211,30 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - `GET /api/admin/stats` - Dashboard statistics
 - `POST /api/seed` - Seed initial route prices
 
+### iWay Proxy
+- `GET /api/iway/search?pickup=&dropoff=&currency=GBP` - Live transfer search
+
 ## Technical Notes
 - Admin password: `planet2024`
 - Stripe uses Emergent test key
 - Default routes seeded via `/api/seed`
 - GBP currency for all transactions
+- iWay user ID: 143708
+- iWay API base: https://ng-api.iwayex.com
 
 ## Backlog / Future Features (P1/P2)
 
 ### P1 - High Priority
+- [ ] Fix WhatsApp number (user to provide correct number - currently +44 773 947 6432)
+- [ ] Booking Flow Improvements: Add reassurance messages ("Secure booking", "Instant confirmation")
 - [ ] Vehicle & Class Management UI
-- [ ] Advanced Pricing Engine (base price, per km, fixed routes)
 - [ ] Email notifications (booking confirmation, quote response)
+- [ ] Pricing Clarity: Ensure "Starts from £X" format consistent site-wide
 
 ### P2 - Medium Priority
-- [ ] API-Ready Architecture (external API like Talixo)
+- [ ] Branding consistency across all pages
+- [ ] Remove unused SEOHead.js component and HelmetProvider from App.js
 - [ ] User Roles & Security (Admin vs Operator)
-- [ ] Audit trail for admin actions
 - [ ] Driver management system
 - [ ] Multi-currency support
 - [ ] Customer accounts/login

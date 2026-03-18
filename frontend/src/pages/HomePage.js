@@ -132,7 +132,8 @@ export default function HomePage() {
       ...formData,
       trip_type: tripType
     };
-    navigate('/booking', { state: bookingData });
+    // Navigate to iWay results page to show live vehicle options
+    navigate('/results', { state: bookingData });
   };
 
   const isFormValid = () => {
@@ -422,7 +423,7 @@ export default function HomePage() {
                   data-testid="continue-btn"
                   disabled={!isFormValid()}
                 >
-                  Continue to Vehicle Selection
+                  Search Available Vehicles
                   <ArrowRight size={20} />
                 </button>
               </form>
@@ -529,26 +530,6 @@ export default function HomePage() {
               </div>
               <p className="font-medium">Fast & Reliable Service</p>
               <p className="text-sm text-slate-400 mt-1">On-time guarantee</p>
-            </div>
-          </div>
-        </div>
-      </section>
-              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Airplane size={32} className="text-[#d4af37]" />
-              </div>
-              <p className="font-medium">Flight Monitoring Included</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone size={32} className="text-[#d4af37]" />
-              </div>
-              <p className="font-medium">24/7 Customer Support</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} className="text-[#d4af37]" />
-              </div>
-              <p className="font-medium">Free Cancellation</p>
             </div>
           </div>
         </div>
