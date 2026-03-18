@@ -205,7 +205,7 @@ export default function HomePage() {
             >
               Request Quote
             </button>
-            <a href="/admin" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Admin</a>
+            {/* Admin link removed from public nav — access via /admin directly */}
           </div>
         </div>
       </nav>
