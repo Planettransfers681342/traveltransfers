@@ -187,6 +187,17 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] BookNow page: "Secure Checkout" handoff card (no iframe, no promotional content)
 - [x] "Book Now" opens iWay booking URL in new tab — removes all supplier promo content
 
+#### Native Booking Flow via iWay API (Mar 18, 2026)
+- [x] Backend POST /api/iway/book: creates order on iWay API, returns Stripe payment URL
+  - Phone normalisation (strips +/spaces), time format YYYY-MM-DD HH:mm
+  - Flight number required for airport pickups, optional otherwise
+- [x] Frontend /passenger-details page (PassengerDetailsPage.js):
+  - Left: route summary, selected vehicle card, price, trust signals
+  - Right: form — name, email, phone, flight number (auto-shown for airports), special requests
+  - "Confirm & Pay £X" submits to /api/iway/book → redirects to Stripe payment page
+- [x] Results "Book Now" navigates natively to /passenger-details (no iframe, no new tab)
+- [x] /api/iway/search updated to include geometry (location lat,lng) and types in place data
+
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
 

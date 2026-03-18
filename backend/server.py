@@ -914,13 +914,122 @@ async def iway_search(pickup: str, dropoff: str, currency: str = "GBP", lang: st
         "from_place": {
             "place_id": from_place["place_id"],
             "description": from_place.get("description", pickup),
-            "name": from_place.get("structured_formatting", {}).get("main_text", pickup)
+            "name": from_place.get("structured_formatting", {}).get("main_text", pickup),
+            "location": from_point,
+            "address": from_place.get("description", pickup),
+            "types": from_place.get("types", [])
         },
         "to_place": {
             "place_id": to_place["place_id"],
             "description": to_place.get("description", dropoff),
-            "name": to_place.get("structured_formatting", {}).get("main_text", dropoff)
+            "name": to_place.get("structured_formatting", {}).get("main_text", dropoff),
+            "location": to_point,
+            "address": to_place.get("description", dropoff),
+            "types": to_place.get("types", [])
         }
+    }
+
+
+class IWayBookingRequest(BaseModel):
+    price_id: int
+    from_place_id: str
+    to_place_id: str
+    from_location: str          # "lat,lng"
+    to_location: str            # "lat,lng"
+    from_address: str
+    to_address: str
+    pickup_datetime: str        # "YYYY-MM-DD HH:mm"
+    currency: str = "GBP"
+    passenger_name: str
+    passenger_email: str
+    passenger_phone: str        # any format — we strip + and spaces
+    flight_number: Optional[str] = None
+    passengers_count: int = 1
+    comment: Optional[str] = ""
+
+
+@api_router.post("/iway/book")
+async def iway_book(req: IWayBookingRequest):
+    """Create a booking via iWay API and return the Stripe payment URL."""
+    # Normalise phone: strip +, spaces, dashes
+    import re as _re
+    phone_clean = _re.sub(r"[\s\-\+\(\)]", "", req.passenger_phone)
+
+    # Format datetime: ensure "YYYY-MM-DD HH:mm"
+    pickup_time = req.pickup_datetime.replace("T", " ")[:16]
+
+    # Build the trips array for iWay
+    start_loc: Dict = {
+        "place_id": req.from_place_id,
+        "time": pickup_time,
+        "address": req.from_address,
+        "location": req.from_location,
+    }
+    if req.flight_number:
+        start_loc["flight_number"] = req.flight_number
+
+    finish_loc: Dict = {
+        "place_id": req.to_place_id,
+        "address": req.to_address,
+        "location": req.to_location,
+    }
+
+    trip = {
+        "lang": "en",
+        "user_id": int(IWAY_USER_ID),
+        "price_id": req.price_id,
+        "currency": req.currency,
+        "is_rent": None,
+        "start_location": start_loc,
+        "finish_location": finish_loc,
+        "passengers_number": req.passengers_count,
+        "adults_amount": req.passengers_count,
+        "children_amount": 0,
+        "passengers": [{
+            "name": req.passenger_name,
+            "phone": phone_clean,
+            "email": req.passenger_email,
+        }],
+        "platform": 3,
+        "comment": req.comment or "",
+    }
+
+    async with httpx.AsyncClient(timeout=20.0) as client_h:
+        # Step 1: Create order
+        order_resp = await client_h.post(
+            f"{IWAY_API_BASE}/v1/orders",
+            json={"trips": [trip]}
+        )
+        order_data = order_resp.json()
+        if order_data.get("error"):
+            err_msg = order_data["error"].get("message", "Booking failed")
+            raise HTTPException(status_code=400, detail=err_msg)
+
+        result = order_data["result"][0]
+        transaction = result["transaction"]
+        booker_number = result.get("booker_number", "")
+
+        # Step 2: Get payment URL
+        pay_resp = await client_h.get(
+            f"{IWAY_API_BASE}/v1/orders/pay-url",
+            params={
+                "transaction": transaction,
+                "trans_host_name": "planettransfers.online",
+                "user_id": IWAY_USER_ID
+            }
+        )
+        pay_data = pay_resp.json()
+        if pay_data.get("error"):
+            raise HTTPException(status_code=400, detail="Could not retrieve payment URL")
+
+        payment_url = pay_data["result"]["url"]
+
+    return {
+        "transaction": transaction,
+        "booker_number": booker_number,
+        "payment_url": payment_url,
+        "price": result.get("price"),
+        "currency": result.get("currency"),
     }
 
 

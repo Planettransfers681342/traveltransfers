@@ -16,7 +16,6 @@ import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
-const IWAY_USER_ID = '143708';
 
 const CAR_CLASS_IMAGES = {
   standard:       'https://iway.io/images/new-template/car-classes-slider/standard.webp',
@@ -96,17 +95,10 @@ export default function IWayResultsPage() {
     }
   };
 
-  const buildBookingUrl = (vehicle) => {
-    // Opens iWay's booking engine directly (not embedded) - avoids promotional iFrame content
-    const params = new URLSearchParams({
-      userID: IWAY_USER_ID,
-      lang: 'en',
-      currency: 'GBP',
+  const handleBook = (vehicle) => {
+    navigate('/passenger-details', {
+      state: { vehicle, fromPlace: results.from_place, toPlace: results.to_place, searchData }
     });
-    if (results?.from_place?.place_id) params.set('from_place_id', results.from_place.place_id);
-    if (results?.to_place?.place_id) params.set('to_place_id', results.to_place.place_id);
-    if (vehicle.car_class?.car_class_id) params.set('car_class_id', vehicle.car_class.car_class_id);
-    return `https://iway.io/steporder/framens?${params.toString()}`;
   };
 
   if (!searchData) return null;
@@ -281,16 +273,14 @@ export default function IWayResultsPage() {
                               <p className="text-xl font-bold text-slate-900 leading-tight">{sym}{price}</p>
                               <p className="text-[10px] text-slate-400">one way *</p>
                             </div>
-                            <a
-                              href={buildBookingUrl(vehicle)}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => handleBook(vehicle)}
                               className="btn-gold py-2.5 px-5 text-sm inline-flex items-center gap-2 whitespace-nowrap"
                               data-testid={`book-vehicle-btn-${idx}`}
                             >
                               Book Now
                               <ArrowRight size={14} />
-                            </a>
+                            </button>
                           </div>
                         </div>
                       </div>
