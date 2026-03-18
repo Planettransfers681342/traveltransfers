@@ -198,6 +198,14 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] Results "Book Now" navigates natively to /passenger-details (no iframe, no new tab)
 - [x] /api/iway/search updated to include geometry (location lat,lng) and types in place data
 
+#### Passenger Details — Transfer Details section (Mar 18, 2026)
+- [x] "Review & Book" page restructured to two sections: Transfer Details + Your Details
+- [x] Transfer Details (editable): Pickup Date & Time (pre-filled, editable), Adults stepper, Children stepper
+- [x] Airport-specific fields (auto-shown): Flight Number (required for airport pickup), Arrival Terminal, Greeting Sign Name
+- [x] Trip Summary sidebar: live-updating summary of all transfer data (pickup, dropoff, date, time, pax, flight, terminal, sign)
+- [x] Backend /api/iway/book updated: terminal_number, adults_count, children_count (mapped to adults_amount/children_amount in iWay)
+- [x] Sign name appended to comment field for iWay
+
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
 

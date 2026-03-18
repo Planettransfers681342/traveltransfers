@@ -944,7 +944,9 @@ class IWayBookingRequest(BaseModel):
     passenger_email: str
     passenger_phone: str        # any format — we strip + and spaces
     flight_number: Optional[str] = None
-    passengers_count: int = 1
+    terminal_number: Optional[str] = None
+    adults_count: int = 1
+    children_count: int = 0
     comment: Optional[str] = ""
 
 
@@ -967,6 +969,8 @@ async def iway_book(req: IWayBookingRequest):
     }
     if req.flight_number:
         start_loc["flight_number"] = req.flight_number
+    if req.terminal_number:
+        start_loc["terminal_number"] = req.terminal_number
 
     finish_loc: Dict = {
         "place_id": req.to_place_id,
@@ -974,6 +978,7 @@ async def iway_book(req: IWayBookingRequest):
         "location": req.to_location,
     }
 
+    total_pax = (req.adults_count or 1) + (req.children_count or 0)
     trip = {
         "lang": "en",
         "user_id": int(IWAY_USER_ID),
@@ -982,9 +987,9 @@ async def iway_book(req: IWayBookingRequest):
         "is_rent": None,
         "start_location": start_loc,
         "finish_location": finish_loc,
-        "passengers_number": req.passengers_count,
-        "adults_amount": req.passengers_count,
-        "children_amount": 0,
+        "passengers_number": total_pax,
+        "adults_amount": req.adults_count or 1,
+        "children_amount": req.children_count or 0,
         "passengers": [{
             "name": req.passenger_name,
             "phone": phone_clean,
