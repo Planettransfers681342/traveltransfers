@@ -17,7 +17,13 @@ import {
   Envelope,
   AirplaneTakeoff,
   AirplaneLanding,
-  Warning
+  Warning,
+  ShieldCheck,
+  CurrencyGbp,
+  Headset,
+  Medal,
+  Globe,
+  Lightning
 } from '@phosphor-icons/react';
 import axios from 'axios';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
@@ -210,21 +216,58 @@ export default function HomePage() {
         data-testid="hero-section"
       >
         <div className="hero-overlay"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 md:py-32">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Hero Text */}
             <div className="text-white fade-in">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-tight mb-6">
-                Worldwide Premium Airport Transfers
+              {/* Trust Badge */}
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
+                <div className="flex items-center">
+                  {[1,2,3,4,5].map((_, i) => (
+                    <Star key={i} size={14} weight="fill" className={i < 5 ? "text-yellow-400" : "text-white/30"} />
+                  ))}
+                </div>
+                <span className="text-sm font-medium">Rated 4.8/5 by customers</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-['Playfair_Display'] font-semibold leading-tight mb-6">
+                Premium Airport Transfers Worldwide
               </h1>
-              <p className="text-xl text-white/80 mb-8 max-w-lg">
-                Book your reliable transfer service with ease. Professional drivers, premium vehicles, and unmatched service.
+              <p className="text-lg md:text-xl text-white/90 mb-8 max-w-lg leading-relaxed">
+                Trusted by international travellers. Professional drivers, fixed prices, and comfortable vehicles for your journey.
               </p>
+              
+              {/* Hero Trust Signals */}
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">
+                  <CheckCircle size={24} weight="fill" className="text-green-400 flex-shrink-0" />
+                  <span className="text-sm font-medium">Free Cancellation</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">
+                  <Users size={24} weight="fill" className="text-blue-400 flex-shrink-0" />
+                  <span className="text-sm font-medium">Meet & Greet Included</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">
+                  <ShieldCheck size={24} weight="fill" className="text-amber-400 flex-shrink-0" />
+                  <span className="text-sm font-medium">Licensed & Insured</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">
+                  <Headset size={24} weight="fill" className="text-purple-400 flex-shrink-0" />
+                  <span className="text-sm font-medium">24/7 Support</span>
+                </div>
+              </div>
             </div>
 
             {/* Booking Widget */}
             <div className="booking-widget glass-card p-8 fade-in fade-in-delay-2" id="booking-form" data-testid="booking-widget">
-              <h2 className="text-2xl font-semibold text-slate-900 mb-6">Book Your Transfer</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold text-slate-900">Book Your Transfer</h2>
+                <div className="flex items-center gap-1 text-green-600 text-sm">
+                  <ShieldCheck size={16} weight="fill" />
+                  <span>Secure</span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-500 mb-6">Instant confirmation • No hidden fees</p>
               
               {/* Trip Type Toggle */}
               <div className="flex mb-6 bg-slate-100 p-1 rounded-sm">
@@ -448,23 +491,48 @@ export default function HomePage() {
       <section className="py-16 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-semibold mb-4">Why Choose Planet Transfers</h2>
-            <p className="text-slate-400">Trusted by travelers worldwide</p>
+            <h2 className="text-3xl md:text-4xl font-semibold mb-4">Why Travellers Choose Us</h2>
+            <p className="text-slate-400">Trusted by thousands of international travellers</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} className="text-[#d4af37]" />
+                <Medal size={32} className="text-[#d4af37]" />
               </div>
-              <p className="font-medium">Professional Licensed Drivers</p>
+              <p className="font-medium">Best Price Guarantee</p>
+              <p className="text-sm text-slate-400 mt-1">Competitive rates always</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} className="text-[#d4af37]" />
+                <ShieldCheck size={32} className="text-[#d4af37]" />
               </div>
-              <p className="font-medium">Fixed Transparent Pricing</p>
+              <p className="font-medium">Professional Vetted Drivers</p>
+              <p className="text-sm text-slate-400 mt-1">Licensed & insured</p>
             </div>
             <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CurrencyGbp size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">No Hidden Costs</p>
+              <p className="text-sm text-slate-400 mt-1">Transparent pricing</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Globe size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">Global Airport Coverage</p>
+              <p className="text-sm text-slate-400 mt-1">500+ airports worldwide</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lightning size={32} className="text-[#d4af37]" />
+              </div>
+              <p className="font-medium">Fast & Reliable Service</p>
+              <p className="text-sm text-slate-400 mt-1">On-time guarantee</p>
+            </div>
+          </div>
+        </div>
+      </section>
               <div className="w-16 h-16 bg-[#d4af37]/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Airplane size={32} className="text-[#d4af37]" />
               </div>
