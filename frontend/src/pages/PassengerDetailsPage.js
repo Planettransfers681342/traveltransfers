@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link, Navigate } from 'react-router-dom';
 import {
   CarSimple, ArrowLeft, ArrowRight, Users, Suitcase, Clock,
   ShieldCheck, CheckCircle, Warning, Airplane, PencilSimple,
@@ -81,15 +81,27 @@ function carImage(title = '') {
 export default function PassengerDetailsPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state;
+
+  // Restore from sessionStorage if navigation state was lost (page refresh)
+  const state = location.state || (() => {
+    try {
+      const saved = sessionStorage.getItem('pt_booking_state');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  })();
 
   const { vehicle, fromPlace, toPlace, searchData } = state || {};
   const cc = vehicle?.car_class || {};
   const sym = vehicle?.currency === 'GBP' ? '£' : vehicle?.currency === 'EUR' ? '€' : '$';
 
-  const fromIsAirport = isAirportType(fromPlace?.types);
-  const toIsAirport   = isAirportType(toPlace?.types);
-  const showFlightFields = fromIsAirport || toIsAirport;
+  const fromIsAirport = isAirportType(fromPlace?.types) ||
+    (fromPlace?.address || '').toLowerCase().includes('airport') ||
+    (searchData?.pickup_location || '').toLowerCase().includes('airport');
+  const toIsAirport   = isAirportType(toPlace?.types) ||
+    (toPlace?.address || '').toLowerCase().includes('airport') ||
+    (searchData?.dropoff_location || '').toLowerCase().includes('airport');
+  // Always show flight fields — this is an airport transfer service
+  const showFlightFields = true;
   const flightRequired   = fromIsAirport;
 
   // ── Form state ────────────────────────────────────────────────────
@@ -115,10 +127,9 @@ export default function PassengerDetailsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState('');
 
-  // Guard
+  // Guard — if state is completely missing (direct URL access), redirect home
   if (!vehicle || !fromPlace || !toPlace || !searchData) {
-    navigate('/');
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   const handleTransfer = (field, value) =>
@@ -136,6 +147,7 @@ export default function PassengerDetailsPage() {
     transfer.pickup_date &&
     transfer.pickup_time &&
     (transfer.adults + transfer.children) > 0 &&
+    (!cc.capacity || (transfer.adults + transfer.children) <= cc.capacity) &&
     (!flightRequired || transfer.flight_number.trim());
 
   const handleSubmit = async (e) => {
@@ -215,6 +227,8 @@ export default function PassengerDetailsPage() {
               <SummaryRow label="Date"       value={formatDisplayDate(transfer.pickup_date)} />
               <SummaryRow label="Time"       value={transfer.pickup_time} />
               <SummaryRow label="Passengers" value={totalPax > 0 ? `${transfer.adults} adult${transfer.adults !== 1 ? 's' : ''}${transfer.children > 0 ? ` + ${transfer.children} child${transfer.children !== 1 ? 'ren' : ''}` : ''}` : '—'} />
+              {searchData.luggage > 0 && <SummaryRow label="Luggage"    value={`${searchData.luggage} bag${searchData.luggage !== 1 ? 's' : ''}`} />}
+              {searchData.trip_type === 'round-trip' && <SummaryRow label="Trip type"  value="Round trip" />}
               {transfer.flight_number && <SummaryRow label="Flight"    value={transfer.flight_number} />}
               {transfer.terminal      && <SummaryRow label="Terminal"  value={transfer.terminal} />}
               {transfer.sign_name     && <SummaryRow label="Sign name" value={transfer.sign_name} />}
@@ -311,6 +325,12 @@ export default function PassengerDetailsPage() {
                     <Stepper value={transfer.adults}   onChange={v => handleTransfer('adults', v)}   min={1} label="Adults" />
                     <Stepper value={transfer.children} onChange={v => handleTransfer('children', v)} min={0} label="Children (under 12)" />
                   </div>
+                  {cc.capacity && (transfer.adults + transfer.children) > cc.capacity && (
+                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1" data-testid="capacity-warning">
+                      <Warning size={13} className="flex-shrink-0" />
+                      This vehicle holds up to {cc.capacity} passengers. Please reduce the count or go back to choose a larger vehicle.
+                    </p>
+                  )}
                 </FormField>
 
                 {/* Airport-specific fields */}

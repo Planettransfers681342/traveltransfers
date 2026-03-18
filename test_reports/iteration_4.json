@@ -1,0 +1,104 @@
+{
+  "summary": "P0 Bug Fix Testing - All 3 P0 fixes verified working. Full booking flow: HomePage → Results → PassengerDetails tested end-to-end. Date/time/passengers pre-fill correctly, flight fields always visible, sessionStorage persistence on refresh works, Navigate guard redirects correctly, capacity warnings work on PassengerDetails.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "iWay fromPlace.types inconsistency",
+        "issue": "When pickup display name includes '(LHR) – London, United Kingdom' format (full autocomplete display), the iWay places/find API resolves it to types=['geocode','premise'] instead of ['airport','establishment','point_of_interest']. However, fromIsAirport fallback correctly uses searchData.pickup_location.includes('airport') which contains 'Airport' in the string, so flightRequired=true works correctly.",
+        "affected_selectors": ["[data-testid='transfer-flight']"],
+        "priority": "LOW - working via fallback, not a breaking issue"
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Homepage hero section",
+        "issues": ["Hero image contains embedded text 'HEADLINE TEXT OURAD' overlaid on the background, which appears on top of the hero content. This looks like placeholder template text inside the uploaded image itself, not a code issue but worth reviewing."]
+      }
+    ]
+  },
+
+  "passed_tests": {
+    "backend": [
+      "GET /api/health → {status: healthy} ✅",
+      "GET /api/iway/search?pickup=London+Heathrow+Airport&dropoff=Central+London → returns from_place (types: ['airport','establishment','point_of_interest']) and to_place with types field, 6 vehicles ✅"
+    ],
+    "booking_flow": [
+      "Homepage form fills correctly (pickup=LHR, dropoff=London Paddington, date, time=14:00, passengers=2) ✅",
+      "Search Available Vehicles button enables when form valid ✅",
+      "Navigation to /results with state passes all booking data ✅",
+      "Results page shows route summary: pickup/dropoff/2pax/21Mar2026/14:00 ✅",
+      "Results page shows 6 vehicles from iWay API ✅",
+      "Book Now on vehicle 0 navigates to /passenger-details with full state ✅"
+    ],
+    "passenger_details_prefill": [
+      "Pickup Date pre-filled: 2026-03-21 (matches homepage form) ✅",
+      "Pickup Time pre-filled: 14:00 ✅",
+      "Adults count pre-filled: 2 (from searchData.passengers) ✅",
+      "Trip Summary shows correct pickup/dropoff/date/time/passengers/luggage ✅"
+    ],
+    "flight_fields_always_visible": [
+      "Flight Number field visible (showFlightFields=true hardcoded) ✅",
+      "Arrival Terminal field visible ✅",
+      "Greeting Sign Name field visible ✅",
+      "Flight Number label has required asterisk (*) when fromIsAirport=true ✅",
+      "Flight Number input has HTML required attribute ✅"
+    ],
+    "session_persistence": [
+      "sessionStorage.pt_booking_state saved with vehicle/fromPlace/toPlace/searchData ✅",
+      "Page refresh stays on /passenger-details (no redirect to home) ✅",
+      "Date/time still correctly pre-filled after page refresh ✅",
+      "Flight fields still visible after refresh ✅"
+    ],
+    "capacity_validation": [
+      "No capacity warnings for 2 pax on results (all vehicles 3+ capacity) ✅",
+      "Capacity warning on PassengerDetails when adults exceeds vehicle capacity ✅",
+      "Warning text: 'This vehicle holds up to 3 passengers. Please reduce the count or go back to choose a larger vehicle.' ✅"
+    ],
+    "navigate_guard": [
+      "Direct URL access to /passenger-details with sessionStorage cleared → redirects to / ✅",
+      "Guard uses <Navigate replace> not navigate() during render ✅"
+    ]
+  },
+
+  "test_report_links": ["/app/test_reports/iteration_4.json"],
+
+  "action_items": [
+    "LOW: Review hero image for 'HEADLINE TEXT OURAD' placeholder text in the image itself",
+    "INFO: fromPlace.types from iWay API may return ['geocode','premise'] for full-format airport queries (e.g. 'London Heathrow Airport (LHR) – London, United Kingdom'). The fallback via searchData.pickup_location.includes('airport') works correctly. No action required."
+  ],
+
+  "critical_code_review_comments": [
+    "showFlightFields=true hardcoded is correct fix - removes dependency on unreliable iWay types",
+    "fromIsAirport triple-check (types + address + pickup_location) is robust - good defensive coding",
+    "sessionStorage fallback in PassengerDetailsPage state restoration works correctly",
+    "Navigate component used instead of imperative navigate() in render - correct React pattern",
+    "iWay search passes full autocomplete display name as pickup/dropoff - could potentially cause type resolution issues with iWay API but fallbacks handle it"
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "100% (health + iWay search)",
+    "frontend": "100% (all 8 test scenarios pass)"
+  },
+
+  "seed_data_creation": "None",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 3 P0 bugs are fixed and verified: (1) showFlightFields=true - flight/terminal/greeting fields always visible, (2) sessionStorage backup + restore on PassengerDetailsPage survives refresh, (3) Navigate guard uses <Navigate replace> not navigate() in render. Full booking flow LHR → London Paddington with 2 pax, date+3 days, time 14:00 works end-to-end. The iWay API is live and returns 6 vehicles for this route in ~5-10 seconds. Capacity warnings work on PassengerDetails page. Direct URL guard redirects correctly.",
+
+  "rca_of_issues": {
+    "p0_bug_1_flight_fields_hidden": "Root cause: iWay API types field for pickup place sometimes returns ['geocode','premise'] instead of ['airport',...] causing isAirportType() to return false and showFlightFields=false. Fix: showFlightFields=true always + fromIsAirport checks address string as fallback. Verified working.",
+    "p0_bug_2_state_lost_on_refresh": "Root cause: React router state not persisted across page reload. Fix: sessionStorage.setItem('pt_booking_state') in handleBook() + restore in PassengerDetailsPage state initialization. Verified: refresh stays on /passenger-details with all data restored.",
+    "p0_bug_3_guard_during_render": "Root cause: calling navigate() inside render function causes React hooks violation. Fix: use <Navigate to='/' replace /> component in JSX return. Verified: direct URL access redirects correctly."
+  }
+}

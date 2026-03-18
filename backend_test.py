@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 class PlanetTransfersAPITester:
-    def __init__(self, base_url="https://iway-integration-hub.preview.emergentagent.com"):
+    def __init__(self, base_url="https://planet-transfers-fix.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0

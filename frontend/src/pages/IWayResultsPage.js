@@ -96,9 +96,10 @@ export default function IWayResultsPage() {
   };
 
   const handleBook = (vehicle) => {
-    navigate('/passenger-details', {
-      state: { vehicle, fromPlace: results.from_place, toPlace: results.to_place, searchData }
-    });
+    const bookingState = { vehicle, fromPlace: results.from_place, toPlace: results.to_place, searchData };
+    // Persist to sessionStorage so passenger details page survives a refresh
+    try { sessionStorage.setItem('pt_booking_state', JSON.stringify(bookingState)); } catch {}
+    navigate('/passenger-details', { state: bookingState });
   };
 
   if (!searchData) return null;
@@ -211,6 +212,7 @@ export default function IWayResultsPage() {
                 const duration = formatDuration(vehicle.travel_time);
                 const distance = vehicle.distance ? `${Math.round(vehicle.distance)} km` : null;
                 const services = filterServices(vehicle.class_services);
+                const overCapacity = capacity && searchData?.passengers > capacity;
 
                 return (
                   <div
@@ -273,9 +275,16 @@ export default function IWayResultsPage() {
                               <p className="text-xl font-bold text-slate-900 leading-tight">{sym}{price}</p>
                               <p className="text-[10px] text-slate-400">one way *</p>
                             </div>
+                            {overCapacity && (
+                              <p className="text-[11px] text-amber-600 text-right flex items-center gap-1">
+                                <Warning size={11} className="flex-shrink-0" />
+                                Max {capacity} pax
+                              </p>
+                            )}
                             <button
                               onClick={() => handleBook(vehicle)}
-                              className="btn-gold py-2.5 px-5 text-sm inline-flex items-center gap-2 whitespace-nowrap"
+                              disabled={overCapacity}
+                              className={`btn-gold py-2.5 px-5 text-sm inline-flex items-center gap-2 whitespace-nowrap ${overCapacity ? 'opacity-40 cursor-not-allowed' : ''}`}
                               data-testid={`book-vehicle-btn-${idx}`}
                             >
                               Book Now
