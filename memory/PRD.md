@@ -170,6 +170,15 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
   - iWay iframe pre-filled with search data
 - [x] Button text updated: "Search Available Vehicles"
 
+#### Booking Flow & Branding Polish (Mar 18, 2026)
+- [x] Progress steps (Search → Select Vehicle → Complete Booking) on Results (step 2) and BookNow (step 3)
+- [x] Dark trust strip on Results + BookNow: "Secure booking • Instant confirmation • Trusted transfer partner • 24/7 support"
+- [x] Homepage widget: 3-step mini flow hint — "1. Search → 2. Choose Vehicle → 3. Book Securely"
+- [x] BookNowPage smart back button: "Back to Vehicles" when arriving from results
+- [x] Pricing clarity: "STARTS FROM £X / one way *" on all vehicle cards
+- [x] Disclaimer box on Results + BookNow: "Estimated price based on route and demand. Final price confirmed after booking."
+- [x] Consistent sticky nav (glassmorphism), footer (logo + links + copyright) on Results + BookNow
+
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
 
