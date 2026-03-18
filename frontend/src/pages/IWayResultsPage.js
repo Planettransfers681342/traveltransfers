@@ -7,39 +7,35 @@ import {
   Users,
   Suitcase,
   CheckCircle,
-  Star,
   Warning,
   ArrowsClockwise,
   ShieldCheck,
-  Clock,
-  Lock,
-  Confetti,
-  Phone
+  Clock
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+const IWAY_USER_ID = '143708';
 
 const CAR_CLASS_IMAGES = {
-  standard: 'https://iway.io/images/new-template/car-classes-slider/standard.webp',
-  comfort:  'https://iway.io/images/new-template/car-classes-slider/comfort.webp',
-  'business light': 'https://iway.io/images/new-template/car-classes-slider/business-lite.webp',
-  'business lite':  'https://iway.io/images/new-template/car-classes-slider/business-lite.webp',
-  business: 'https://iway.io/images/new-template/car-classes-slider/business.webp',
-  luxury:   'https://iway.io/images/new-template/car-classes-slider/luxury.webp',
-  minivan:  'https://iway.io/images/new-template/car-classes-slider/minivan.webp',
-  'minivan vip': 'https://iway.io/images/new-template/car-classes-slider/minivan-vip.webp',
-  suv:      'https://iway.io/images/new-template/car-classes-slider/suv.webp',
-  minibus:  'https://iway.io/images/new-template/car-classes-slider/minibus.webp',
+  standard:       'https://iway.io/images/new-template/car-classes-slider/standard.webp',
+  comfort:        'https://iway.io/images/new-template/car-classes-slider/comfort.webp',
+  'business light':'https://iway.io/images/new-template/car-classes-slider/business-lite.webp',
+  'business lite': 'https://iway.io/images/new-template/car-classes-slider/business-lite.webp',
+  business:       'https://iway.io/images/new-template/car-classes-slider/business.webp',
+  luxury:         'https://iway.io/images/new-template/car-classes-slider/luxury.webp',
+  minivan:        'https://iway.io/images/new-template/car-classes-slider/minivan.webp',
+  'minivan vip':  'https://iway.io/images/new-template/car-classes-slider/minivan-vip.webp',
+  suv:            'https://iway.io/images/new-template/car-classes-slider/suv.webp',
+  minibus:        'https://iway.io/images/new-template/car-classes-slider/minibus.webp',
 };
 
 function getCarImage(title = '') {
-  const key = title.toLowerCase();
-  // Try exact match, then partial
-  if (CAR_CLASS_IMAGES[key]) return CAR_CLASS_IMAGES[key];
-  for (const k of Object.keys(CAR_CLASS_IMAGES)) {
-    if (key.includes(k) || k.includes(key)) return CAR_CLASS_IMAGES[k];
+  const k = title.toLowerCase();
+  if (CAR_CLASS_IMAGES[k]) return CAR_CLASS_IMAGES[k];
+  for (const key of Object.keys(CAR_CLASS_IMAGES)) {
+    if (k.includes(key) || key.includes(k)) return CAR_CLASS_IMAGES[key];
   }
   return CAR_CLASS_IMAGES.standard;
 }
@@ -48,75 +44,26 @@ function formatDuration(seconds) {
   if (!seconds) return null;
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `~${h}h ${m > 0 ? ` ${m}m` : ''}`.trim();
-  return `~${m} min`;
+  return h > 0 ? `~${h}h${m > 0 ? ` ${m}m` : ''}` : `~${m} min`;
 }
 
-function formatSymbol(currency = 'GBP') {
-  if (currency === 'GBP') return '£';
-  if (currency === 'EUR') return '€';
-  if (currency === 'USD') return '$';
-  return currency + ' ';
+function currencySymbol(c = 'GBP') {
+  return c === 'GBP' ? '£' : c === 'EUR' ? '€' : '$';
 }
 
-function ProgressSteps({ step }) {
-  const steps = ['Search', 'Select Vehicle', 'Complete Booking'];
-  return (
-    <div className="flex items-center justify-center gap-0 mb-6">
-      {steps.map((label, i) => {
-        const num = i + 1;
-        const done = num < step;
-        const active = num === step;
-        return (
-          <React.Fragment key={num}>
-            <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors
-                ${done ? 'bg-green-500 border-green-500 text-white' :
-                  active ? 'bg-[#d4af37] border-[#d4af37] text-white' :
-                  'bg-white border-slate-200 text-slate-400'}`}
-              >
-                {done ? <CheckCircle size={16} weight="fill" /> : num}
-              </div>
-              <span className={`text-xs mt-1 whitespace-nowrap font-medium
-                ${active ? 'text-[#d4af37]' : done ? 'text-green-600' : 'text-slate-400'}`}
-              >
-                {label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div className={`h-0.5 w-12 sm:w-20 mx-1 mb-5 transition-colors
-                ${done ? 'bg-green-400' : 'bg-slate-200'}`} />
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
+function formatDate(d) {
+  if (!d) return '';
+  try { return new Date(d + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  catch { return d; }
 }
 
-function TrustStrip() {
-  return (
-    <div className="bg-slate-900 text-white px-6 py-2.5">
-      <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
-        <span className="flex items-center gap-1.5 text-xs text-slate-300">
-          <Lock size={12} className="text-green-400" />
-          Secure booking
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-slate-300">
-          <Confetti size={12} className="text-[#d4af37]" />
-          Instant confirmation
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-slate-300">
-          <ShieldCheck size={12} className="text-blue-400" />
-          Trusted transfer partner
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-slate-300">
-          <Phone size={12} className="text-purple-400" />
-          24/7 support
-        </span>
-      </div>
-    </div>
-  );
+// Key services we surface (exclude generic/promotional ones)
+const USEFUL_SERVICES = ['meeting', 'meet', 'greet', 'waiting', 'cancellation', 'flight', 'free'];
+function filterServices(services = []) {
+  return services.filter(s => {
+    const t = (s.title || '').toLowerCase();
+    return USEFUL_SERVICES.some(k => t.includes(k));
+  }).slice(0, 3);
 }
 
 export default function IWayResultsPage() {
@@ -143,45 +90,40 @@ export default function IWayResultsPage() {
       });
       setResults(data);
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        'Unable to find transfers for this route. Please try a different location or use our quote form.'
-      );
+      setError(err.response?.data?.detail || 'Unable to find transfers for this route. Please try a different location.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBook = (vehicle) => {
+  const buildBookingUrl = (vehicle) => {
+    // Opens iWay's booking engine directly (not embedded) - avoids promotional iFrame content
     const params = new URLSearchParams({
-      from_place_id: results.from_place.place_id,
-      to_place_id: results.to_place.place_id,
-      car_class_id: vehicle.car_class?.car_class_id || '',
+      userID: IWAY_USER_ID,
+      lang: 'en',
+      currency: 'GBP',
     });
-    navigate(`/book?${params.toString()}`);
+    if (results?.from_place?.place_id) params.set('from_place_id', results.from_place.place_id);
+    if (results?.to_place?.place_id) params.set('to_place_id', results.to_place.place_id);
+    if (vehicle.car_class?.car_class_id) params.set('car_class_id', vehicle.car_class.car_class_id);
+    return `https://iway.io/steporder/framens?${params.toString()}`;
   };
 
   if (!searchData) return null;
 
-  const formatDate = (d) => {
-    if (!d) return '';
-    try {
-      return new Date(d + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch { return d; }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Nav */}
+    <div className="min-h-screen bg-[#f8f8f6] flex flex-col">
+
+      {/* ── Navigation ── */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-slate-100 sticky top-0 z-40 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <CarSimple size={30} weight="fill" className="text-[#d4af37]" />
+            <CarSimple size={28} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-lg font-semibold text-slate-900">Planet Transfers</span>
           </Link>
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
             data-testid="modify-search-btn"
           >
             <ArrowLeft size={16} />
@@ -190,93 +132,79 @@ export default function IWayResultsPage() {
         </div>
       </nav>
 
-      {/* Trust Strip */}
-      <TrustStrip />
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-10">
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8">
-        {/* Progress Steps */}
-        <ProgressSteps step={2} />
-
-        {/* Route Summary Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 mb-6 shadow-sm">
-          <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-3">Your Transfer</p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* ── Route Summary ── */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 mb-8 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Your Transfer</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-              </div>
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Pickup</p>
+                <p className="text-[10px] text-slate-400 uppercase font-semibold">From</p>
                 <p className="font-semibold text-slate-900 text-sm truncate">{searchData.pickup_location}</p>
               </div>
             </div>
-            <ArrowRight size={18} className="text-slate-300 flex-shrink-0 hidden sm:block" />
+            <ArrowRight size={16} className="text-slate-300 flex-shrink-0 hidden sm:block" />
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-              </div>
+              <div className="w-2.5 h-2.5 rounded-full bg-slate-700 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Dropoff</p>
+                <p className="text-[10px] text-slate-400 uppercase font-semibold">To</p>
                 <p className="font-semibold text-slate-900 text-sm truncate">{searchData.dropoff_location}</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 flex-shrink-0 border-t sm:border-t-0 sm:border-l border-slate-100 pt-3 sm:pt-0 sm:pl-4">
-              <span className="flex items-center gap-1"><Users size={14} />{searchData.passengers} pax</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 flex-shrink-0 sm:border-l sm:border-slate-100 sm:pl-4">
+              <span className="flex items-center gap-1"><Users size={13} />{searchData.passengers} pax</span>
               <span>{formatDate(searchData.pickup_date)}</span>
               <span>{searchData.pickup_time}</span>
             </div>
           </div>
         </div>
 
-        {/* Loading */}
+        {/* ── Loading ── */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4" data-testid="iway-loading">
-            <div className="w-12 h-12 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
-            <p className="text-slate-700 font-semibold">Searching available vehicles...</p>
-            <p className="text-slate-400 text-sm">Checking live availability and prices</p>
+          <div className="flex flex-col items-center justify-center py-24 gap-3" data-testid="iway-loading">
+            <div className="w-10 h-10 border-[3px] border-[#d4af37] border-t-transparent rounded-full animate-spin" />
+            <p className="text-slate-700 font-medium text-sm">Searching available vehicles…</p>
           </div>
         )}
 
-        {/* Error */}
+        {/* ── Error ── */}
         {!loading && error && (
           <div className="text-center py-16" data-testid="iway-error">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Warning size={32} className="text-amber-600" />
+            <div className="w-14 h-14 bg-amber-50 border border-amber-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Warning size={28} className="text-amber-500" />
             </div>
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">No Results Found</h2>
-            <p className="text-slate-600 max-w-md mx-auto mb-6">{error}</p>
+            <h2 className="text-lg font-semibold text-slate-900 mb-2">No results found</h2>
+            <p className="text-slate-500 text-sm max-w-sm mx-auto mb-6">{error}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={fetchResults}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
                 data-testid="retry-search-btn"
               >
-                <ArrowsClockwise size={18} />Try Again
+                <ArrowsClockwise size={16} /> Try Again
               </button>
               <button
                 onClick={() => navigate('/quote')}
-                className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
               >
                 Request a Quote
               </button>
-              <a
-                href="/book"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#d4af37] text-white rounded-lg hover:bg-[#b8952e] transition-colors text-sm font-medium"
-              >
-                Open Booking Engine
-              </a>
             </div>
           </div>
         )}
 
-        {/* Results */}
+        {/* ── Results ── */}
         {!loading && results && !error && (
           <>
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="font-semibold text-slate-900" data-testid="results-heading">
-                <span className="text-lg">{results.vehicles.length} vehicles</span>
-                <span className="text-slate-500 font-normal text-sm ml-1.5">available for your transfer</span>
+            <div className="mb-5">
+              <h1 className="font-['Playfair_Display'] text-2xl font-semibold text-slate-900" data-testid="results-heading">
+                Available Transfers
               </h1>
+              <p className="text-sm text-slate-500 mt-1">
+                {results.vehicles.length} vehicle{results.vehicles.length !== 1 ? 's' : ''} available — live availability
+              </p>
             </div>
 
             <div className="space-y-4" data-testid="vehicle-results">
@@ -287,96 +215,83 @@ export default function IWayResultsPage() {
                 const capacity = cc.capacity || vehicle.capacity;
                 const luggage = cc.luggage_capacity;
                 const price = vehicle.price;
-                const sym = formatSymbol(vehicle.currency);
+                const sym = currencySymbol(vehicle.currency);
                 const duration = formatDuration(vehicle.travel_time);
                 const distance = vehicle.distance ? `${Math.round(vehicle.distance)} km` : null;
-                const services = vehicle.class_services || [];
+                const services = filterServices(vehicle.class_services);
 
                 return (
                   <div
                     key={vehicle.price_id || idx}
-                    className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-[#d4af37]/40 hover:shadow-md transition-all duration-200 overflow-hidden"
+                    className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-[#d4af37]/50 hover:shadow-md transition-all duration-200"
                     data-testid={`vehicle-card-${idx}`}
                   >
                     <div className="flex flex-col sm:flex-row">
-                      {/* Image panel */}
-                      <div className="sm:w-44 bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4 flex-shrink-0">
+
+                      {/* Vehicle image */}
+                      <div className="sm:w-40 bg-slate-50 flex items-center justify-center p-5 flex-shrink-0">
                         <img
                           src={getCarImage(title)}
-                          alt={`${title} class transfer vehicle`}
-                          className="h-24 w-auto object-contain drop-shadow-sm"
+                          alt={`${title} transfer`}
+                          className="h-20 w-auto object-contain"
                           onError={(e) => { e.target.src = CAR_CLASS_IMAGES.standard; }}
                         />
                       </div>
 
-                      {/* Content */}
-                      <div className="flex-1 p-5 flex flex-col justify-between">
+                      {/* Details */}
+                      <div className="flex-1 p-5">
                         <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h2 className="text-base font-bold text-slate-900">{title}</h2>
+
+                          {/* Left: name + specs */}
+                          <div className="flex-1 min-w-0">
+                            <h2 className="font-semibold text-slate-900 text-base">{title}</h2>
                             {models && (
                               <p className="text-xs text-slate-400 mt-0.5">{models} or similar</p>
                             )}
-                          </div>
-                          {/* Pricing block */}
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Starts from</p>
-                            <p className="text-2xl font-bold text-slate-900 leading-tight">{sym}{price}</p>
-                            <p className="text-xs text-slate-400">one way *</p>
-                          </div>
-                        </div>
 
-                        {/* Specs row */}
-                        <div className="flex flex-wrap gap-3 mt-3 text-xs text-slate-500">
-                          {capacity && (
-                            <span className="flex items-center gap-1.5">
-                              <Users size={13} className="text-slate-400" />
-                              Up to {capacity} passengers
-                            </span>
-                          )}
-                          {luggage != null && (
-                            <span className="flex items-center gap-1.5">
-                              <Suitcase size={13} className="text-slate-400" />
-                              {luggage} bags
-                            </span>
-                          )}
-                          {duration && (
-                            <span className="flex items-center gap-1.5">
-                              <Clock size={13} className="text-slate-400" />
-                              {duration}
-                            </span>
-                          )}
-                          {distance && (
-                            <span className="text-slate-400">{distance}</span>
-                          )}
-                        </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-slate-500">
+                              {capacity && (
+                                <span className="flex items-center gap-1"><Users size={12} className="text-slate-400" />Up to {capacity} pax</span>
+                              )}
+                              {luggage != null && (
+                                <span className="flex items-center gap-1"><Suitcase size={12} className="text-slate-400" />{luggage} bags</span>
+                              )}
+                              {duration && (
+                                <span className="flex items-center gap-1"><Clock size={12} className="text-slate-400" />{duration}</span>
+                              )}
+                              {distance && <span className="text-slate-400">{distance}</span>}
+                            </div>
 
-                        {/* Services */}
-                        {services.length > 0 && (
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5">
-                            {services.slice(0, 4).map((s) => (
-                              <span key={s.id} className="flex items-center gap-1 text-[11px] text-green-700">
-                                <CheckCircle size={11} weight="fill" className="text-green-500 flex-shrink-0" />
-                                {s.title}{s.value ? ` (${s.value} min)` : ''}
-                              </span>
-                            ))}
+                            {services.length > 0 && (
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5">
+                                {services.map(s => (
+                                  <span key={s.id} className="flex items-center gap-1 text-[11px] text-green-700">
+                                    <CheckCircle size={11} weight="fill" className="text-green-500 flex-shrink-0" />
+                                    {s.title}{s.value ? ` (${s.value} min)` : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
 
-                        {/* CTA row */}
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-xs text-slate-400">
-                            <Star size={11} weight="fill" className="text-[#d4af37]" />
-                            <span>{vehicle.service_provider?.rating || 5}.0 rated driver</span>
+                          {/* Right: price + CTA */}
+                          <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                            <div className="text-right">
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">Starts from</p>
+                              <p className="text-xl font-bold text-slate-900 leading-tight">{sym}{price}</p>
+                              <p className="text-[10px] text-slate-400">one way *</p>
+                            </div>
+                            <a
+                              href={buildBookingUrl(vehicle)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-gold py-2.5 px-5 text-sm inline-flex items-center gap-2 whitespace-nowrap"
+                              data-testid={`book-vehicle-btn-${idx}`}
+                            >
+                              Book Now
+                              <ArrowRight size={14} />
+                            </a>
                           </div>
-                          <button
-                            onClick={() => handleBook(vehicle)}
-                            className="btn-gold py-2.5 px-5 text-sm flex items-center gap-2"
-                            data-testid={`book-vehicle-btn-${idx}`}
-                          >
-                            Book Now
-                            <ArrowRight size={15} />
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -386,36 +301,32 @@ export default function IWayResultsPage() {
             </div>
 
             {/* Disclaimer */}
-            <div className="mt-6 p-4 bg-amber-50 border border-amber-100 rounded-lg">
-              <p className="text-xs text-amber-800 text-center leading-relaxed">
-                * Estimated price based on route and demand. Final price confirmed after booking.
-                Free cancellation may apply — see booking terms for details.
-              </p>
-            </div>
+            <p className="text-center text-xs text-slate-400 mt-8 leading-relaxed">
+              * Estimated price based on route and demand. Final price confirmed after booking.
+              Free cancellation may apply — see booking terms.
+            </p>
 
-            {/* Bottom trust row */}
-            <div className="flex flex-wrap justify-center gap-5 mt-5 pb-4">
-              {[
-                { icon: Lock, color: 'text-green-500', label: 'Secure payment' },
-                { icon: Confetti, color: 'text-[#d4af37]', label: 'Instant confirmation' },
-                { icon: ShieldCheck, color: 'text-blue-500', label: 'Trusted partner' },
-                { icon: Phone, color: 'text-purple-500', label: '24/7 support' },
-              ].map(({ icon: Icon, color, label }) => (
-                <span key={label} className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <Icon size={13} className={color} />
-                  {label}
-                </span>
-              ))}
+            {/* Minimal trust row */}
+            <div className="flex flex-wrap justify-center gap-5 mt-4 mb-2">
+              <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                <ShieldCheck size={13} className="text-green-500" />Secure payment
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                <CheckCircle size={13} className="text-blue-400" />Instant confirmation
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                <Clock size={13} className="text-amber-400" />Free waiting time
+              </span>
             </div>
           </>
         )}
       </main>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <footer className="bg-white border-t border-slate-100 mt-auto">
         <div className="max-w-5xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <CarSimple size={22} weight="fill" className="text-[#d4af37]" />
+            <CarSimple size={20} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] font-semibold text-slate-900 text-sm">Planet Transfers</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-400">

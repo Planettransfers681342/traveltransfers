@@ -261,22 +261,14 @@ export default function HomePage() {
 
             {/* Booking Widget */}
             <div className="booking-widget glass-card p-8 fade-in fade-in-delay-2" id="booking-form" data-testid="booking-widget">
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-semibold text-slate-900">Book Your Transfer</h2>
-                <div className="flex items-center gap-1 text-green-600 text-xs font-medium">
-                  <ShieldCheck size={14} weight="fill" />
+                <div className="flex items-center gap-1 text-green-600 text-sm">
+                  <ShieldCheck size={16} weight="fill" />
                   <span>Secure</span>
                 </div>
               </div>
-
-              {/* 3-step mini flow */}
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-5">
-                <span className="text-[#d4af37] font-semibold">1. Search</span>
-                <span>→</span>
-                <span>2. Choose Vehicle</span>
-                <span>→</span>
-                <span>3. Book Securely</span>
-              </div>
+              <p className="text-sm text-slate-500 mb-6">Instant confirmation · No hidden fees</p>
               
               {/* Trip Type Toggle */}
               <div className="flex mb-6 bg-slate-100 p-1 rounded-sm">

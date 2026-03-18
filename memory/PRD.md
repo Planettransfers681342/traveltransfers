@@ -179,6 +179,14 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] Disclaimer box on Results + BookNow: "Estimated price based on route and demand. Final price confirmed after booking."
 - [x] Consistent sticky nav (glassmorphism), footer (logo + links + copyright) on Results + BookNow
 
+#### Results Page Visual Rebrand (Mar 18, 2026)
+- [x] Replaced dark trust strip with clean minimal layout matching PT homepage aesthetic
+- [x] Removed progress steps and iframe-based BookNow page
+- [x] Results page: Playfair Display "Available Transfers" heading, clean white vehicle cards
+- [x] Only relevant services shown (meet & greet, waiting time, free cancellation)
+- [x] BookNow page: "Secure Checkout" handoff card (no iframe, no promotional content)
+- [x] "Book Now" opens iWay booking URL in new tab — removes all supplier promo content
+
 ### Contact Information
 - Email: GBRoyaltransfers@gmail.com
 
