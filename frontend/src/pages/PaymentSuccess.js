@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   CheckCircle, CarSimple, ArrowRight, Envelope,
   MapPin, Calendar, Clock, Users, Airplane, Car
 } from '@phosphor-icons/react';
 
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const SUPPORT_EMAIL = 'GBRoyaltransfers@gmail.com';
 
 function formatDate(d) {
@@ -22,13 +24,18 @@ export default function PaymentSuccess() {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    // Read booking summary saved just before redirect to iWay payment
     try {
       const saved = sessionStorage.getItem('pt_booking_summary');
       if (saved) {
-        setSummary(JSON.parse(saved));
-        // Clear once read — prevents stale data on future visits
+        const parsed = JSON.parse(saved);
+        setSummary(parsed);
         sessionStorage.removeItem('pt_booking_summary');
+        // Mark our DB record as payment_completed
+        if (parsed.internal_booking_id) {
+          axios.put(`${API}/iway/bookings/${parsed.internal_booking_id}/status`, {
+            payment_status: 'payment_completed',
+          }).catch(() => {});
+        }
       }
     } catch {}
   }, []);

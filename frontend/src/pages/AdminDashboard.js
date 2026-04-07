@@ -23,14 +23,16 @@ const API = `${BACKEND_URL}/api`;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('bookings');
+  const [activeTab, setActiveTab] = useState('transfers');
   const [stats, setStats] = useState({});
   const [bookings, setBookings] = useState([]);
+  const [iwayBookings, setIwayBookings] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [iwaySearch, setIwaySearch] = useState('');
   const [routeForm, setRouteForm] = useState({
     from_location: '',
     to_location: '',
@@ -54,16 +56,18 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, bookingsRes, routesRes, quotesRes] = await Promise.all([
+      const [statsRes, bookingsRes, routesRes, quotesRes, iwayRes] = await Promise.all([
         axios.get(`${API}/admin/stats`),
         axios.get(`${API}/bookings`),
         axios.get(`${API}/routes/prices`),
-        axios.get(`${API}/quotes`)
+        axios.get(`${API}/quotes`),
+        axios.get(`${API}/iway/bookings`),
       ]);
       setStats(statsRes.data);
       setBookings(bookingsRes.data);
       setRoutes(routesRes.data);
       setQuotes(quotesRes.data);
+      setIwayBookings(iwayRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -160,6 +164,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleIwayStatusChange = async (bookingId, field, value) => {
+    try {
+      await axios.put(`${API}/iway/bookings/${bookingId}/status`, { [field]: value });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating iWay booking status:', error);
+    }
+  };
+
+  const filteredIwayBookings = iwayBookings.filter(b =>
+    b.passenger_name?.toLowerCase().includes(iwaySearch.toLowerCase()) ||
+    b.passenger_email?.toLowerCase().includes(iwaySearch.toLowerCase()) ||
+    b.pickup_location?.toLowerCase().includes(iwaySearch.toLowerCase()) ||
+    b.dropoff_location?.toLowerCase().includes(iwaySearch.toLowerCase()) ||
+    b.iway_booker_number?.toLowerCase().includes(iwaySearch.toLowerCase())
+  );
+
   const filteredBookings = bookings.filter(booking => 
     booking.passenger_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     booking.passenger_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,6 +219,16 @@ export default function AdminDashboard() {
     return badges[status] || 'badge-pending';
   };
 
+  const getIwayPaymentBadge = (status) => {
+    const map = {
+      pending: 'badge-pending',
+      payment_completed: 'badge-paid',
+      cancelled: 'badge-cancelled',
+      iway_error: 'badge-cancelled',
+    };
+    return map[status] || 'badge-pending';
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex">
       {/* Sidebar */}
@@ -211,6 +242,19 @@ export default function AdminDashboard() {
         </div>
 
         <nav>
+          <div
+            onClick={() => setActiveTab('transfers')}
+            className={`admin-nav-item ${activeTab === 'transfers' ? 'active' : ''}`}
+            data-testid="nav-transfers"
+          >
+            <CarSimple size={20} />
+            <span>Transfers</span>
+            {stats.iway_pending > 0 && (
+              <span className="ml-auto bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {stats.iway_pending}
+              </span>
+            )}
+          </div>
           <div
             onClick={() => setActiveTab('bookings')}
             className={`admin-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
@@ -257,28 +301,122 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 ml-[260px] p-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="stat-card" data-testid="stat-total-bookings">
-            <div className="stat-value">{stats.total_bookings || 0}</div>
-            <div className="stat-label">Total Bookings</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="stat-card" data-testid="stat-iway-total">
+            <div className="stat-value">{stats.total_iway_bookings || 0}</div>
+            <div className="stat-label">Transfer Bookings</div>
           </div>
-          <div className="stat-card" data-testid="stat-pending">
-            <div className="stat-value">{stats.pending_bookings || 0}</div>
-            <div className="stat-label">Pending</div>
+          <div className="stat-card" data-testid="stat-iway-paid">
+            <div className="stat-value">{stats.iway_payment_completed || 0}</div>
+            <div className="stat-label">Payments Completed</div>
           </div>
-          <div className="stat-card" data-testid="stat-confirmed">
-            <div className="stat-value">{stats.confirmed_bookings || 0}</div>
-            <div className="stat-label">Confirmed</div>
+          <div className="stat-card" data-testid="stat-iway-pending">
+            <div className="stat-value">{stats.iway_pending || 0}</div>
+            <div className="stat-label">Awaiting Payment</div>
           </div>
-          <div className="stat-card" data-testid="stat-completed">
-            <div className="stat-value">{stats.completed_bookings || 0}</div>
-            <div className="stat-label">Completed</div>
-          </div>
-          <div className="stat-card" data-testid="stat-revenue">
-            <div className="stat-value">£{(stats.total_revenue || 0).toFixed(2)}</div>
-            <div className="stat-label">Revenue (Confirmed+Completed)</div>
+          <div className="stat-card" data-testid="stat-iway-revenue">
+            <div className="stat-value">£{(stats.iway_revenue || 0).toFixed(2)}</div>
+            <div className="stat-label">Transfer Revenue</div>
           </div>
         </div>
+
+        {/* Transfers Tab (iWay bookings) */}
+        {activeTab === 'transfers' && (
+          <div className="admin-card" data-testid="transfers-section">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Transfer Bookings</h2>
+                <p className="text-xs text-slate-400 mt-0.5">All bookings created through the iWay booking flow</p>
+              </div>
+              <div className="relative">
+                <MagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search transfers..."
+                  value={iwaySearch}
+                  onChange={(e) => setIwaySearch(e.target.value)}
+                  className="input-field pl-10 h-10 w-64"
+                  data-testid="search-transfers"
+                />
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12 text-slate-400">Loading...</div>
+            ) : filteredIwayBookings.length === 0 ? (
+              <div className="text-center py-16 text-slate-400">
+                <CarSimple size={40} className="mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No transfer bookings yet</p>
+                <p className="text-sm mt-1">Bookings will appear here once customers complete the booking flow.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Passenger</th>
+                      <th>Route</th>
+                      <th>Date & Time</th>
+                      <th>Vehicle / Ref</th>
+                      <th>Price</th>
+                      <th>Payment</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredIwayBookings.map((b) => (
+                      <tr key={b.id} data-testid={`iway-booking-row-${b.id}`}>
+                        <td>
+                          <p className="font-medium">{b.passenger_name}</p>
+                          <p className="text-xs text-slate-500">{b.passenger_email}</p>
+                          <p className="text-xs text-slate-400">{b.passenger_phone}</p>
+                        </td>
+                        <td>
+                          <p className="text-sm">{b.pickup_location?.substring(0, 28)}{b.pickup_location?.length > 28 ? '…' : ''}</p>
+                          <p className="text-xs text-slate-500">→ {b.dropoff_location?.substring(0, 28)}{b.dropoff_location?.length > 28 ? '…' : ''}</p>
+                          {b.flight_number && <p className="text-xs text-slate-400 mt-0.5">✈ {b.flight_number}</p>}
+                        </td>
+                        <td>
+                          <p className="text-sm">{b.pickup_date}</p>
+                          <p className="text-xs text-slate-500">{b.pickup_time}</p>
+                          <p className="text-xs text-slate-400">{b.passengers} pax · {b.luggage} bags</p>
+                        </td>
+                        <td>
+                          <p className="text-sm font-medium capitalize">{b.vehicle_class || '—'}</p>
+                          {b.iway_booker_number && <p className="text-xs text-slate-400">Ref: {b.iway_booker_number}</p>}
+                        </td>
+                        <td className="font-medium">
+                          {b.price ? `£${Number(b.price).toFixed(2)}` : '—'}
+                        </td>
+                        <td>
+                          <span className={`badge ${getIwayPaymentBadge(b.payment_status)}`}>
+                            {b.payment_status === 'payment_completed' ? 'Paid' :
+                             b.payment_status === 'cancelled' ? 'Cancelled' :
+                             b.payment_status === 'iway_error' ? 'Error' : 'Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            value={b.booking_status}
+                            onChange={(e) => handleIwayStatusChange(b.id, 'booking_status', e.target.value)}
+                            className="text-sm border border-slate-200 rounded px-2 py-1"
+                            data-testid={`iway-status-${b.id}`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="iway_error">Error</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (

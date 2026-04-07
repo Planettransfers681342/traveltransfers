@@ -180,11 +180,19 @@ export default function PassengerDetailsPage() {
         adults_count:      transfer.adults,
         children_count:    transfer.children,
         comment:           commentParts.join(' | ') || '',
+        // Extra fields for our own DB record
+        pickup_location:   searchData.pickup_location,
+        dropoff_location:  searchData.dropoff_location,
+        luggage_count:     searchData.luggage || 0,
+        vehicle_class:     cc.title || 'Standard',
+        greeting_sign:     transfer.sign_name.trim() || null,
+        displayed_price:   vehicle.price || null,
       });
 
       // Save booking summary to sessionStorage so success page can display it
       try {
         sessionStorage.setItem('pt_booking_summary', JSON.stringify({
+          internal_booking_id: data.internal_booking_id || null,
           booker_number: data.booker_number || '',
           transaction:   data.transaction   || '',
           price:         data.price         || vehicle.price,

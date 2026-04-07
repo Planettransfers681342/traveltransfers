@@ -688,23 +688,34 @@ async def get_admin_stats():
     pending_bookings = await db.bookings.count_documents({"booking_status": "pending"})
     confirmed_bookings = await db.bookings.count_documents({"booking_status": "confirmed"})
     completed_bookings = await db.bookings.count_documents({"booking_status": "completed"})
-    
-    # Calculate revenue from CONFIRMED + COMPLETED bookings only (with paid status)
+
     revenue_bookings = await db.bookings.find(
-        {
-            "payment_status": "paid",
-            "booking_status": {"$in": ["confirmed", "completed"]}
-        }, 
+        {"payment_status": "paid", "booking_status": {"$in": ["confirmed", "completed"]}},
         {"_id": 0, "price": 1}
     ).to_list(1000)
     total_revenue = sum(b.get("price", 0) for b in revenue_bookings)
-    
+
+    # iWay transfer bookings
+    total_iway = await db.iway_bookings.count_documents({})
+    iway_payment_completed = await db.iway_bookings.count_documents({"payment_status": "payment_completed"})
+    iway_pending = await db.iway_bookings.count_documents({"payment_status": "pending", "booking_status": "pending"})
+
+    iway_revenue_docs = await db.iway_bookings.find(
+        {"payment_status": "payment_completed"},
+        {"_id": 0, "price": 1}
+    ).to_list(1000)
+    iway_revenue = sum(b.get("price") or 0 for b in iway_revenue_docs)
+
     return {
         "total_bookings": total_bookings,
         "pending_bookings": pending_bookings,
         "confirmed_bookings": confirmed_bookings,
         "completed_bookings": completed_bookings,
-        "total_revenue": round(total_revenue, 2)
+        "total_revenue": round(total_revenue, 2),
+        "total_iway_bookings": total_iway,
+        "iway_payment_completed": iway_payment_completed,
+        "iway_pending": iway_pending,
+        "iway_revenue": round(iway_revenue, 2),
     }
 
 # ==================== SEED DATA ====================
@@ -930,6 +941,44 @@ async def iway_search(pickup: str, dropoff: str, currency: str = "GBP", lang: st
     }
 
 
+class IWayBookingRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Trip
+    pickup_location: str = ""
+    dropoff_location: str = ""
+    pickup_date: str = ""
+    pickup_time: str = ""
+    passengers: int = 1
+    luggage: int = 0
+    flight_number: Optional[str] = None
+    greeting_sign: Optional[str] = None
+    # Vehicle
+    vehicle_class: str = ""
+    price: Optional[float] = None
+    currency: str = "GBP"
+    # Customer
+    passenger_name: str = ""
+    passenger_email: str = ""
+    passenger_phone: str = ""
+    # iWay refs
+    from_place_id: str = ""
+    to_place_id: str = ""
+    price_id: Optional[int] = None
+    iway_transaction: Optional[str] = None
+    iway_booker_number: Optional[str] = None
+    # Status
+    supplier: str = "iway"
+    payment_status: str = "pending"   # pending | payment_completed | cancelled
+    booking_status: str = "pending"   # pending | confirmed | completed | cancelled | iway_error
+    admin_notes: Optional[str] = None
+
+class IWayBookingStatusUpdate(BaseModel):
+    payment_status: Optional[str] = None
+    booking_status: Optional[str] = None
+    admin_notes: Optional[str] = None
+
 class IWayBookingRequest(BaseModel):
     price_id: int
     from_place_id: str
@@ -948,22 +997,53 @@ class IWayBookingRequest(BaseModel):
     adults_count: int = 1
     children_count: int = 0
     comment: Optional[str] = ""
+    # Extra fields used to save our own booking record
+    pickup_location: Optional[str] = ""
+    dropoff_location: Optional[str] = ""
+    luggage_count: int = 0
+    vehicle_class: Optional[str] = ""
+    greeting_sign: Optional[str] = None
+    displayed_price: Optional[float] = None
 
 
 @api_router.post("/iway/book")
 async def iway_book(req: IWayBookingRequest):
-    """Create a booking via iWay API and return the Stripe payment URL."""
-    # Normalise phone: strip +, spaces, dashes
+    """Create a booking via iWay API, persist to our DB, return the payment URL."""
     import re as _re
     phone_clean = _re.sub(r"[\s\-\+\(\)]", "", req.passenger_phone)
+    pickup_time_full = req.pickup_datetime.replace("T", " ")[:16]  # "YYYY-MM-DD HH:mm"
+    pickup_date_str, pickup_t_str = pickup_time_full.split(" ") if " " in pickup_time_full else (pickup_time_full[:10], pickup_time_full[11:16])
 
-    # Format datetime: ensure "YYYY-MM-DD HH:mm"
-    pickup_time = req.pickup_datetime.replace("T", " ")[:16]
+    # ── Step 0: Persist booking record BEFORE touching iWay ──────────────────
+    total_pax = (req.adults_count or 1) + (req.children_count or 0)
+    record = IWayBookingRecord(
+        pickup_location=req.pickup_location or req.from_address,
+        dropoff_location=req.dropoff_location or req.to_address,
+        pickup_date=pickup_date_str,
+        pickup_time=pickup_t_str,
+        passengers=total_pax,
+        luggage=req.luggage_count or 0,
+        flight_number=req.flight_number,
+        greeting_sign=req.greeting_sign,
+        vehicle_class=req.vehicle_class or "",
+        price=req.displayed_price,
+        currency=req.currency,
+        passenger_name=req.passenger_name,
+        passenger_email=req.passenger_email,
+        passenger_phone=phone_clean,
+        from_place_id=req.from_place_id,
+        to_place_id=req.to_place_id,
+        price_id=req.price_id,
+    )
+    record_doc = record.model_dump()
+    record_doc["created_at"] = record.created_at.isoformat()
+    await db.iway_bookings.insert_one(record_doc)
+    internal_id = record.id
 
-    # Build the trips array for iWay
+    # ── Step 1: Build the iWay trip payload ──────────────────────────────────
     start_loc: Dict = {
         "place_id": req.from_place_id,
-        "time": pickup_time,
+        "time": pickup_time_full,
         "address": req.from_address,
         "location": req.from_location,
     }
@@ -978,7 +1058,6 @@ async def iway_book(req: IWayBookingRequest):
         "location": req.to_location,
     }
 
-    total_pax = (req.adults_count or 1) + (req.children_count or 0)
     trip = {
         "lang": "en",
         "user_id": int(IWAY_USER_ID),
@@ -1000,7 +1079,7 @@ async def iway_book(req: IWayBookingRequest):
     }
 
     async with httpx.AsyncClient(timeout=20.0) as client_h:
-        # Step 1: Create order
+        # ── Step 2: Create order on iWay ─────────────────────────────────────
         order_resp = await client_h.post(
             f"{IWAY_API_BASE}/v1/orders",
             json={"trips": [trip]}
@@ -1008,13 +1087,18 @@ async def iway_book(req: IWayBookingRequest):
         order_data = order_resp.json()
         if order_data.get("error"):
             err_msg = order_data["error"].get("message", "Booking failed")
+            await db.iway_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"booking_status": "iway_error", "admin_notes": err_msg}}
+            )
             raise HTTPException(status_code=400, detail=err_msg)
 
         result = order_data["result"][0]
         transaction = result["transaction"]
         booker_number = result.get("booker_number", "")
+        final_price = result.get("price")
 
-        # Step 2: Get payment URL
+        # ── Step 3: Get payment URL ───────────────────────────────────────────
         pay_resp = await client_h.get(
             f"{IWAY_API_BASE}/v1/orders/pay-url",
             params={
@@ -1025,9 +1109,20 @@ async def iway_book(req: IWayBookingRequest):
         )
         pay_data = pay_resp.json()
         if pay_data.get("error"):
+            await db.iway_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"iway_transaction": transaction, "booking_status": "iway_error",
+                          "admin_notes": "pay-url call failed"}}
+            )
             raise HTTPException(status_code=400, detail="Could not retrieve payment URL")
 
         payment_url = pay_data["result"]["url"]
+
+        # ── Step 4: Update our record with iWay data ─────────────────────────
+        iway_update: Dict = {"iway_transaction": transaction, "iway_booker_number": booker_number}
+        if final_price:
+            iway_update["price"] = final_price
+        await db.iway_bookings.update_one({"id": internal_id}, {"$set": iway_update})
 
     return {
         "transaction": transaction,
@@ -1035,7 +1130,39 @@ async def iway_book(req: IWayBookingRequest):
         "payment_url": payment_url,
         "price": result.get("price"),
         "currency": result.get("currency"),
+        "internal_booking_id": internal_id,
     }
+
+
+# ── iWay booking admin endpoints ─────────────────────────────────────────────
+
+@api_router.get("/iway/bookings")
+async def list_iway_bookings():
+    """Return all iWay bookings newest first (admin use)."""
+    bookings = await db.iway_bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return bookings
+
+
+@api_router.get("/iway/bookings/{booking_id}")
+async def get_iway_booking(booking_id: str):
+    booking = await db.iway_bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
+
+
+@api_router.put("/iway/bookings/{booking_id}/status")
+async def update_iway_booking_status(booking_id: str, update: IWayBookingStatusUpdate):
+    set_fields: Dict = {}
+    if update.payment_status is not None:
+        set_fields["payment_status"] = update.payment_status
+    if update.booking_status is not None:
+        set_fields["booking_status"] = update.booking_status
+    if update.admin_notes is not None:
+        set_fields["admin_notes"] = update.admin_notes
+    if set_fields:
+        await db.iway_bookings.update_one({"id": booking_id}, {"$set": set_fields})
+    return {"ok": True}
 
 
 # Include the router in the main app
