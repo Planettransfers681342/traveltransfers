@@ -53,11 +53,14 @@ export default function PaymentSuccess() {
             <CheckCircle size={44} weight="fill" className="text-green-500" />
           </div>
 
-          <h1 className="font-['Playfair_Display'] text-2xl font-semibold text-slate-900 mb-2">
+          <h1 className="font-['Playfair_Display'] text-2xl font-semibold text-slate-900 mb-3">
             Booking Received
           </h1>
-          <p className="text-slate-600 text-sm leading-relaxed max-w-sm mx-auto">
-            Thank you. Your booking request has been received and payment was completed with our secure partner.
+          <p className="text-slate-700 text-sm font-medium mb-2">
+            Your booking request has been successfully received.
+          </p>
+          <p className="text-slate-500 text-sm leading-relaxed max-w-sm mx-auto">
+            Payment has been completed with our secure partner. Your transfer provider will process your booking and confirm the service details shortly.
           </p>
 
           {ref && (
