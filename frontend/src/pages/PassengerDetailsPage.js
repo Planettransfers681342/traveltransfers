@@ -181,6 +181,28 @@ export default function PassengerDetailsPage() {
         children_count:    transfer.children,
         comment:           commentParts.join(' | ') || '',
       });
+
+      // Save booking summary to sessionStorage so success page can display it
+      try {
+        sessionStorage.setItem('pt_booking_summary', JSON.stringify({
+          booker_number: data.booker_number || '',
+          transaction:   data.transaction   || '',
+          price:         data.price         || vehicle.price,
+          currency:      data.currency      || vehicle.currency || 'GBP',
+          pickup:        searchData.pickup_location,
+          dropoff:       searchData.dropoff_location,
+          date:          transfer.pickup_date,
+          time:          transfer.pickup_time,
+          passengers:    transfer.adults + transfer.children,
+          flight_number: transfer.flight_number.trim() || null,
+          vehicle_class: cc.title || 'Standard',
+          passenger_name:  contact.name.trim(),
+          passenger_email: contact.email.trim(),
+        }));
+        // Booking state no longer needed — clear it
+        sessionStorage.removeItem('pt_booking_state');
+      } catch {}
+
       window.location.href = data.payment_url;
     } catch (err) {
       setError(err.response?.data?.detail || 'Booking failed. Please check your details and try again.');

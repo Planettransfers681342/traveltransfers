@@ -1,185 +1,191 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, CarSimple, Spinner, House, WhatsappLogo } from '@phosphor-icons/react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import {
+  CheckCircle, CarSimple, ArrowRight, Envelope,
+  MapPin, Calendar, Clock, Users, Airplane, Car
+} from '@phosphor-icons/react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const SUPPORT_EMAIL = 'GBRoyaltransfers@gmail.com';
 
-const WHATSAPP_NUMBER = "447739476432";
+function formatDate(d) {
+  if (!d) return '';
+  try { return new Date(d + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }); }
+  catch { return d; }
+}
+
+function currencySymbol(c = 'GBP') {
+  return c === 'GBP' ? '£' : c === 'EUR' ? '€' : '$';
+}
 
 export default function PaymentSuccess() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('checking'); // checking, success, error
-  const [booking, setBooking] = useState(null);
+  const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    const sessionId = searchParams.get('session_id');
-    if (!sessionId) {
-      setStatus('error');
-      return;
-    }
-
-    // Poll for payment status
-    const pollPaymentStatus = async (attempts = 0) => {
-      const maxAttempts = 10;
-      const pollInterval = 2000;
-
-      if (attempts >= maxAttempts) {
-        setStatus('error');
-        return;
+    // Read booking summary saved just before redirect to iWay payment
+    try {
+      const saved = sessionStorage.getItem('pt_booking_summary');
+      if (saved) {
+        setSummary(JSON.parse(saved));
+        // Clear once read — prevents stale data on future visits
+        sessionStorage.removeItem('pt_booking_summary');
       }
+    } catch {}
+  }, []);
 
-      try {
-        const response = await axios.get(`${API}/checkout/status/${sessionId}`);
-        
-        if (response.data.payment_status === 'paid') {
-          setStatus('success');
-          // Fetch booking details
-          if (response.data.booking_id) {
-            const bookingRes = await axios.get(`${API}/bookings/${response.data.booking_id}`);
-            setBooking(bookingRes.data);
-          }
-          return;
-        } else if (response.data.status === 'expired') {
-          setStatus('error');
-          return;
-        }
-
-        // Continue polling
-        setTimeout(() => pollPaymentStatus(attempts + 1), pollInterval);
-      } catch (error) {
-        console.error('Error checking payment status:', error);
-        if (attempts >= maxAttempts - 1) {
-          setStatus('error');
-        } else {
-          setTimeout(() => pollPaymentStatus(attempts + 1), pollInterval);
-        }
-      }
-    };
-
-    pollPaymentStatus();
-  }, [searchParams]);
+  const sym = currencySymbol(summary?.currency);
+  const ref = summary?.booker_number || summary?.transaction || null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
-      <div className="max-w-lg w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-2">
-            <CarSimple size={32} weight="fill" className="text-[#d4af37]" />
-            <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
-          </a>
+    <div className="min-h-screen bg-[#f8f8f6] flex flex-col items-center justify-center px-4 py-12">
+
+      {/* Logo */}
+      <a href="/" className="flex items-center gap-2 mb-10">
+        <CarSimple size={30} weight="fill" className="text-[#d4af37]" />
+        <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
+      </a>
+
+      <div className="w-full max-w-lg space-y-4">
+
+        {/* ── Success banner ── */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm">
+          <div className="w-20 h-20 bg-green-50 border-2 border-green-200 rounded-full flex items-center justify-center mx-auto mb-5">
+            <CheckCircle size={44} weight="fill" className="text-green-500" />
+          </div>
+
+          <h1 className="font-['Playfair_Display'] text-2xl font-semibold text-slate-900 mb-2">
+            Booking Received
+          </h1>
+          <p className="text-slate-600 text-sm leading-relaxed max-w-sm mx-auto">
+            Thank you. Your booking request has been received and payment was completed with our secure partner.
+          </p>
+
+          {ref && (
+            <div className="mt-5 inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2">
+              <span className="text-xs text-slate-400 uppercase tracking-wide font-semibold">Booking ref</span>
+              <span className="text-sm font-bold text-slate-900 tracking-wider">{ref}</span>
+            </div>
+          )}
         </div>
 
-        <div className="bg-white border border-slate-200 p-8 text-center" data-testid="payment-success-card">
-          {status === 'checking' && (
-            <>
-              <Spinner size={64} className="text-[#d4af37] animate-spin mx-auto mb-6" />
-              <h1 className="text-2xl font-semibold text-slate-900 mb-2">Verifying Payment...</h1>
-              <p className="text-slate-600">Please wait while we confirm your payment.</p>
-            </>
-          )}
+        {/* ── Trip summary ── */}
+        {summary && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-4">Trip Summary</p>
 
-          {status === 'success' && (
-            <>
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle size={48} weight="fill" className="text-green-500" />
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <MapPin size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">From</p>
+                  <p className="text-sm font-medium text-slate-900">{summary.pickup}</p>
+                </div>
               </div>
-              <h1 className="text-3xl font-semibold text-slate-900 mb-2">Payment Successful!</h1>
-              <p className="text-slate-600 mb-6">
-                Thank you for booking with Planet Transfers. Your transfer is confirmed.
-              </p>
-              
-              {booking && (
-                <div className="bg-slate-50 p-6 text-left mb-6">
-                  <h3 className="font-semibold text-slate-900 mb-4">Booking Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Booking ID:</span>
-                      <span className="font-medium">{booking.id?.slice(0, 8)}...</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">From:</span>
-                      <span className="font-medium">{booking.pickup_location}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">To:</span>
-                      <span className="font-medium">{booking.dropoff_location}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Date:</span>
-                      <span className="font-medium">{booking.pickup_date}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Time:</span>
-                      <span className="font-medium">{booking.pickup_time}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Amount Paid:</span>
-                      <span className="font-semibold text-green-600">£{booking.price?.toFixed(2)}</span>
-                    </div>
+              <div className="flex items-start gap-3">
+                <MapPin size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">To</p>
+                  <p className="text-sm font-medium text-slate-900">{summary.dropoff}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3 grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} className="text-slate-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Date</p>
+                    <p className="text-sm font-medium text-slate-900">{formatDate(summary.date)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock size={14} className="text-slate-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Time</p>
+                    <p className="text-sm font-medium text-slate-900">{summary.time}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users size={14} className="text-slate-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Passengers</p>
+                    <p className="text-sm font-medium text-slate-900">{summary.passengers}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Car size={14} className="text-slate-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Vehicle</p>
+                    <p className="text-sm font-medium text-slate-900">{summary.vehicle_class}</p>
+                  </div>
+                </div>
+              </div>
+
+              {summary.flight_number && (
+                <div className="flex items-center gap-2 pt-1">
+                  <Airplane size={14} className="text-slate-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Flight</p>
+                    <p className="text-sm font-medium text-slate-900">{summary.flight_number}</p>
                   </div>
                 </div>
               )}
 
-              <p className="text-sm text-slate-500 mb-6">
-                A confirmation email has been sent to your email address. 
-                Your driver will contact you before the pickup time.
-              </p>
+              <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+                <span className="text-sm text-slate-500">Amount paid</span>
+                <span className="text-lg font-bold text-slate-900">{sym}{summary.price}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  onClick={() => navigate('/')} 
-                  className="btn-primary flex-1 flex items-center justify-center gap-2"
-                  data-testid="back-home-btn"
-                >
-                  <House size={20} />
-                  Back to Home
-                </button>
-                <a 
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi, I just booked a transfer (Booking ID: ${booking?.id?.slice(0, 8)}). I have a question.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
-                >
-                  <WhatsappLogo size={20} weight="fill" />
-                  Contact Us
-                </a>
-              </div>
-            </>
-          )}
-
-          {status === 'error' && (
-            <>
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">⚠️</span>
-              </div>
-              <h1 className="text-2xl font-semibold text-slate-900 mb-2">Payment Verification Issue</h1>
-              <p className="text-slate-600 mb-6">
-                We couldn't verify your payment. If you were charged, please contact our support team.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  onClick={() => navigate('/')} 
-                  className="btn-primary flex-1"
-                >
-                  Back to Home
-                </button>
-                <a 
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi, I had an issue with my payment. Can you help?")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
-                >
-                  <WhatsappLogo size={20} weight="fill" />
-                  Get Help
-                </a>
-              </div>
-            </>
-          )}
+        {/* ── What happens next ── */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-4">What Happens Next</p>
+          <ul className="space-y-3 text-sm text-slate-600">
+            <li className="flex items-start gap-2.5">
+              <CheckCircle size={16} weight="fill" className="text-green-400 mt-0.5 flex-shrink-0" />
+              Your booking has been passed to our transfer partner for fulfilment.
+            </li>
+            <li className="flex items-start gap-2.5">
+              <CheckCircle size={16} weight="fill" className="text-green-400 mt-0.5 flex-shrink-0" />
+              Your driver will be assigned and will contact you before your pickup time.
+            </li>
+            <li className="flex items-start gap-2.5">
+              <CheckCircle size={16} weight="fill" className="text-green-400 mt-0.5 flex-shrink-0" />
+              For airport pickups, your driver will monitor your flight for any delays.
+            </li>
+          </ul>
         </div>
+
+        {/* ── Support ── */}
+        <div className="bg-slate-900 rounded-2xl p-6 text-white">
+          <p className="text-sm font-semibold mb-1">Need help with your booking?</p>
+          <p className="text-slate-400 text-xs mb-4">
+            {ref ? `Quote your reference: ${ref}` : 'Our team is here to help.'}
+          </p>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}?subject=Booking Enquiry${ref ? ` – Ref ${ref}` : ''}`}
+            className="inline-flex items-center gap-2 bg-[#d4af37] text-slate-900 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#c9a430] transition-colors"
+            data-testid="contact-support-btn"
+          >
+            <Envelope size={16} />
+            {SUPPORT_EMAIL}
+          </a>
+        </div>
+
+        {/* ── Back home ── */}
+        <button
+          onClick={() => navigate('/')}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium py-3.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+          data-testid="back-home-btn"
+        >
+          Back to Home
+          <ArrowRight size={16} />
+        </button>
+
+        <p className="text-center text-xs text-slate-400 pb-4">
+          © {new Date().getFullYear()} Planet Transfers · All rights reserved
+        </p>
       </div>
     </div>
   );
