@@ -49,8 +49,8 @@ export const AddressAutocomplete = ({
       const airportResults = searchAirports(query, 5);
       const airportSuggestions = airportResults.map(airport => ({
         id: `airport-${airport.iata}`,
-        display_name: formatAirportDisplay(airport),
-        short_name: formatAirportDisplay(airport),
+        display_name: formatAirportDisplay(airport),   // shown in dropdown list
+        short_name: `${airport.name}, ${airport.city}`, // shown in input + sent to iWay
         type: 'airport',
         iata: airport.iata,
         isAirport: true
