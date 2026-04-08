@@ -10,7 +10,9 @@ import {
   Warning,
   ArrowsClockwise,
   ShieldCheck,
-  Clock
+  Clock,
+  Airplane,
+  ArrowCounterClockwise,
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -198,6 +200,21 @@ export default function IWayResultsPage() {
               <p className="text-sm text-slate-500 mt-1">
                 {results.vehicles.length} vehicle{results.vehicles.length !== 1 ? 's' : ''} available — live availability
               </p>
+            </div>
+
+            {/* Trust badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6" data-testid="results-trust-badges">
+              {[
+                { icon: ShieldCheck,           label: 'Secure booking' },
+                { icon: ArrowCounterClockwise,  label: 'Free cancellation up to 48h' },
+                { icon: Airplane,               label: 'Flight tracking included' },
+                { icon: CheckCircle,            label: 'Instant confirmation' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+                  <Icon size={14} weight="fill" className="text-[#d4af37] flex-shrink-0" />
+                  <span className="text-xs text-slate-600 leading-tight">{label}</span>
+                </div>
+              ))}
             </div>
 
             <div className="space-y-4" data-testid="vehicle-results">

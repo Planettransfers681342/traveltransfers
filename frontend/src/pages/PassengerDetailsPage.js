@@ -3,7 +3,8 @@ import { useLocation, useNavigate, Link, Navigate } from 'react-router-dom';
 import {
   CarSimple, ArrowLeft, ArrowRight, Users, Suitcase, Clock,
   ShieldCheck, CheckCircle, Warning, Airplane, PencilSimple,
-  CalendarBlank, MapPin, IdentificationCard, Note
+  CalendarBlank, MapPin, IdentificationCard, Note,
+  ArrowCounterClockwise, LockSimple
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -485,6 +486,31 @@ export default function PassengerDetailsPage() {
                   </div>
                 )}
 
+                {/* Trust badges — above payment button */}
+                <div className="grid grid-cols-2 gap-2" data-testid="payment-trust-badges">
+                  {[
+                    { icon: ShieldCheck,           label: 'Secure booking' },
+                    { icon: ArrowCounterClockwise,  label: 'Free cancellation up to 48h' },
+                    { icon: Airplane,               label: 'Flight tracking included' },
+                    { icon: CheckCircle,            label: 'Instant confirmation' },
+                  ].map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2">
+                      <Icon size={12} weight="fill" className="text-[#d4af37] flex-shrink-0" />
+                      <span className="text-[11px] text-slate-600 leading-tight">{label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Redirect notice */}
+                <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-center" data-testid="redirect-notice">
+                  <p className="text-xs text-blue-800 font-medium leading-relaxed">
+                    You will be redirected to our secure payment partner to complete your booking.
+                  </p>
+                  <p className="text-[11px] text-blue-600 mt-1">
+                    Your selected transfer details will remain unchanged.
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={!isValid() || submitting}
@@ -494,7 +520,7 @@ export default function PassengerDetailsPage() {
                   {submitting ? (
                     <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Processing…</>
                   ) : (
-                    <>Confirm &amp; Pay {sym}{vehicle.price}<ArrowRight size={16} /></>
+                    <><LockSimple size={15} weight="fill" />Proceed to Secure Payment — {sym}{vehicle.price}<ArrowRight size={15} /></>
                   )}
                 </button>
 
@@ -502,7 +528,6 @@ export default function PassengerDetailsPage() {
                   By confirming, you agree to our{' '}
                   <Link to="/terms-conditions" className="underline hover:text-slate-600">Terms</Link> and{' '}
                   <Link to="/privacy-policy" className="underline hover:text-slate-600">Privacy Policy</Link>.
-                  You'll be redirected to our secure payment partner to complete payment.
                 </p>
               </div>
             </form>
