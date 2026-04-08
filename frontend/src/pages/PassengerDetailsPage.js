@@ -6,7 +6,10 @@ import {
   CalendarBlank, MapPin, IdentificationCard, Note,
   ArrowCounterClockwise, LockSimple
 } from '@phosphor-icons/react';
+import axios from 'axios';
 import { openWhatsApp } from '../utils/whatsapp';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function isAirportType(types = []) {
