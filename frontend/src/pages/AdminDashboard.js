@@ -360,6 +360,7 @@ export default function AdminDashboard() {
                       <th>Vehicle / Ref</th>
                       <th>Price</th>
                       <th>Payment</th>
+                      <th>Email</th>
                       <th>Status</th>
                     </tr>
                   </thead>
@@ -394,6 +395,20 @@ export default function AdminDashboard() {
                              b.payment_status === 'cancelled' ? 'Cancelled' :
                              b.payment_status === 'iway_error' ? 'Error' : 'Pending'}
                           </span>
+                        </td>
+                        <td>
+                          {b.email_sent === true && (
+                            <span className="badge badge-confirmed" title="Confirmation email sent">Sent</span>
+                          )}
+                          {b.email_sent === false && (
+                            <span className="badge badge-cancelled" title={b.email_error || 'Failed'}>Failed</span>
+                          )}
+                          {b.email_sent === undefined && b.payment_status !== 'payment_completed' && (
+                            <span className="text-xs text-slate-300">—</span>
+                          )}
+                          {b.email_sent === undefined && b.payment_status === 'payment_completed' && (
+                            <span className="text-xs text-amber-500">Pending</span>
+                          )}
                         </td>
                         <td>
                           <select

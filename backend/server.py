@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, BackgroundTasks
 from fastapi.responses import PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -10,7 +10,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone
+import asyncio
 import httpx
+import resend
 from emergentintegrations.payments.stripe.checkout import (
     StripeCheckout, 
     CheckoutSessionResponse, 
@@ -860,6 +862,187 @@ async def sitemap():
 IWAY_USER_ID = "143708"
 IWAY_API_BASE = "https://ng-api.iwayex.com"
 
+# ==================== EMAIL (RESEND) ====================
+
+resend.api_key = os.environ.get('RESEND_API_KEY', '')
+_SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+_SUPPORT_EMAIL = 'GBRoyaltransfers@gmail.com'
+
+
+def _format_email_date(date_str: str) -> str:
+    try:
+        from datetime import datetime as _dt
+        return _dt.strptime(date_str, '%Y-%m-%d').strftime('%A, %d %B %Y')
+    except Exception:
+        return date_str
+
+
+def _build_confirmation_html(booking: dict) -> str:
+    sym = '£' if booking.get('currency', 'GBP') == 'GBP' else ('€' if booking.get('currency') == 'EUR' else '$')
+    price_str = f"{sym}{float(booking['price']):.2f}" if booking.get('price') else 'See payment receipt'
+    pt_ref = f"PT-{booking['id'][:8].upper()}"
+
+    iway_ref_row = (
+        f'<p style="margin:6px 0 0;color:#9ca3af;font-size:12px;font-family:Arial,sans-serif;">'
+        f'iWay Ref: {booking["iway_booker_number"]}</p>'
+        if booking.get('iway_booker_number') else ''
+    )
+
+    date_time = _format_email_date(booking.get('pickup_date', ''))
+    if booking.get('pickup_time'):
+        date_time += f" at {booking['pickup_time']}"
+
+    flight_row = ''
+    if booking.get('flight_number'):
+        flight_row = f'''
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #f3f4f6;">
+          <table width="100%"><tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;vertical-align:top;padding-top:2px;">Flight</td>
+            <td style="color:#111827;font-size:14px;font-weight:500;font-family:Arial,sans-serif;">{booking["flight_number"]}</td>
+          </tr></table>
+        </td></tr>'''
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Booking Confirmation – Planet Transfers</title></head>
+<body style="margin:0;padding:0;background-color:#f5f5f0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f0;padding:40px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+  <!-- Header -->
+  <tr><td style="background-color:#0f1419;padding:32px 40px;text-align:center;border-radius:12px 12px 0 0;">
+    <p style="margin:0;color:#d4af37;font-size:22px;font-weight:bold;letter-spacing:2px;font-family:Georgia,'Times New Roman',serif;">PLANET TRANSFERS</p>
+    <p style="margin:8px 0 0;color:#6b7280;font-size:11px;letter-spacing:3px;text-transform:uppercase;font-family:Arial,sans-serif;">Booking Confirmation</p>
+  </td></tr>
+
+  <!-- Gold bar -->
+  <tr><td style="background-color:#d4af37;padding:13px 40px;text-align:center;">
+    <p style="margin:0;color:#0f1419;font-size:12px;font-weight:bold;letter-spacing:1px;font-family:Arial,sans-serif;">BOOKING REQUEST RECEIVED SUCCESSFULLY</p>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="background-color:#ffffff;padding:40px;">
+
+    <p style="margin:0 0 18px;color:#374151;font-size:15px;font-family:Arial,sans-serif;">Dear {booking.get('passenger_name', 'Valued Customer')},</p>
+    <p style="margin:0 0 28px;color:#374151;font-size:14px;line-height:1.7;font-family:Arial,sans-serif;">Your booking request has been received successfully. Payment was completed with our secure partner. Your transfer details are being processed and you will be contacted before your scheduled pickup.</p>
+
+    <!-- Booking ref -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+      <tr><td style="background-color:#faf7ee;border:2px solid #d4af37;border-radius:10px;padding:22px;text-align:center;">
+        <p style="margin:0 0 6px;color:#9ca3af;font-size:10px;text-transform:uppercase;letter-spacing:3px;font-family:Arial,sans-serif;">Your Booking Reference</p>
+        <p style="margin:0;color:#0f1419;font-size:28px;font-weight:bold;letter-spacing:4px;font-family:Georgia,'Times New Roman',serif;">{pt_ref}</p>
+        {iway_ref_row}
+      </td></tr>
+    </table>
+
+    <!-- Transfer details table -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+      <tr><td style="background-color:#f9fafb;padding:14px 20px;border-bottom:1px solid #e5e7eb;">
+        <p style="margin:0;color:#0f1419;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Transfer Details</p>
+      </td></tr>
+      <tr><td style="padding:14px 20px;border-bottom:1px solid #f3f4f6;"><table width="100%"><tr>
+        <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;vertical-align:top;padding-top:2px;">From</td>
+        <td style="color:#111827;font-size:14px;font-weight:500;font-family:Arial,sans-serif;">{booking.get('pickup_location','')}</td>
+      </tr></table></td></tr>
+      <tr><td style="padding:14px 20px;border-bottom:1px solid #f3f4f6;"><table width="100%"><tr>
+        <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;vertical-align:top;padding-top:2px;">To</td>
+        <td style="color:#111827;font-size:14px;font-weight:500;font-family:Arial,sans-serif;">{booking.get('dropoff_location','')}</td>
+      </tr></table></td></tr>
+      <tr><td style="padding:14px 20px;border-bottom:1px solid #f3f4f6;"><table width="100%"><tr>
+        <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;">Date & Time</td>
+        <td style="color:#111827;font-size:14px;font-weight:500;font-family:Arial,sans-serif;">{date_time}</td>
+      </tr></table></td></tr>
+      <tr><td style="padding:14px 20px;border-bottom:1px solid #f3f4f6;"><table width="100%"><tr>
+        <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;">Passengers</td>
+        <td style="color:#111827;font-size:14px;font-weight:500;font-family:Arial,sans-serif;">{booking.get('passengers',1)}</td>
+      </tr></table></td></tr>
+      <tr><td style="padding:14px 20px;border-bottom:1px solid #f3f4f6;"><table width="100%"><tr>
+        <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;">Vehicle</td>
+        <td style="color:#111827;font-size:14px;font-weight:500;font-family:Arial,sans-serif;">{booking.get('vehicle_class','Standard')}</td>
+      </tr></table></td></tr>
+      {flight_row}
+      <tr><td style="padding:16px 20px;background-color:#f9fafb;"><table width="100%"><tr>
+        <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-family:Arial,sans-serif;">Amount Paid</td>
+        <td style="color:#0f1419;font-size:20px;font-weight:bold;font-family:Georgia,'Times New Roman',serif;">{price_str}</td>
+      </tr></table></td></tr>
+    </table>
+
+    <!-- What happens next -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-radius:10px;overflow:hidden;">
+      <tr><td style="background-color:#f0fdf4;padding:20px 24px;">
+        <p style="margin:0 0 12px;color:#15803d;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">What Happens Next</p>
+        <p style="margin:0 0 8px;color:#374151;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">&#10003;&nbsp; Your booking has been passed to our transfer partner for fulfilment.</p>
+        <p style="margin:0 0 8px;color:#374151;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">&#10003;&nbsp; Your driver will be assigned and will contact you before your pickup time.</p>
+        <p style="margin:0;color:#374151;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">&#10003;&nbsp; For airport pickups, your driver will monitor your flight for any delays.</p>
+      </td></tr>
+    </table>
+
+    <!-- Cancellation policy -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-radius:10px;overflow:hidden;">
+      <tr><td style="background-color:#fffbeb;border:1px solid #fde68a;padding:18px 24px;">
+        <p style="margin:0 0 6px;color:#92400e;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Cancellation Policy</p>
+        <p style="margin:0;color:#78350f;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">Free cancellation up to 48 hours before your scheduled pickup. Cancellations within 48 hours may be subject to a charge. To cancel or amend your booking, please contact us with your booking reference.</p>
+      </td></tr>
+    </table>
+
+    <!-- Need help -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;border-radius:10px;overflow:hidden;">
+      <tr><td style="background-color:#0f1419;padding:24px;">
+        <p style="margin:0 0 6px;color:#ffffff;font-size:14px;font-weight:bold;font-family:Arial,sans-serif;">Need Help?</p>
+        <p style="margin:0 0 14px;color:#9ca3af;font-size:12px;font-family:Arial,sans-serif;">Please quote your reference <strong style="color:#d4af37;">{pt_ref}</strong> when contacting us.</p>
+        <a href="mailto:{_SUPPORT_EMAIL}" style="color:#d4af37;font-size:13px;text-decoration:none;font-family:Arial,sans-serif;">{_SUPPORT_EMAIL}</a>
+      </td></tr>
+    </table>
+
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background-color:#f9fafb;padding:24px 40px;text-align:center;border-radius:0 0 12px 12px;border-top:1px solid #e5e7eb;">
+    <p style="margin:0 0 4px;color:#111827;font-size:13px;font-weight:bold;font-family:Arial,sans-serif;">Planet Transfers</p>
+    <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;font-family:Arial,sans-serif;">Premium Airport Transfer Service</p>
+    <p style="margin:12px 0 0;color:#d1d5db;font-size:10px;font-family:Arial,sans-serif;">This is an automated confirmation. Please do not reply directly to this email.</p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>"""
+
+
+async def _send_booking_confirmation(booking: dict) -> None:
+    """Send booking confirmation email and persist the result to DB (background task)."""
+    if not resend.api_key:
+        logger.warning("RESEND_API_KEY not set — skipping confirmation email")
+        return
+
+    pt_ref = f"PT-{booking['id'][:8].upper()}"
+    params: Dict = {
+        "from": f"Planet Transfers <{_SENDER_EMAIL}>",
+        "to": [booking["passenger_email"]],
+        "subject": f"Booking Confirmation – {pt_ref} | Planet Transfers",
+        "html": _build_confirmation_html(booking),
+    }
+
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        email_id = result.get("id") if isinstance(result, dict) else getattr(result, "id", None)
+        await db.iway_bookings.update_one(
+            {"id": booking["id"]},
+            {"$set": {
+                "email_sent": True,
+                "email_sent_at": datetime.now(timezone.utc).isoformat(),
+                "email_id": email_id,
+            }}
+        )
+        logger.info(f"Confirmation email sent for {pt_ref} → {booking['passenger_email']}")
+    except Exception as exc:
+        await db.iway_bookings.update_one(
+            {"id": booking["id"]},
+            {"$set": {"email_sent": False, "email_error": str(exc)}}
+        )
+        logger.error(f"Failed to send confirmation email for {pt_ref}: {exc}")
+
 @api_router.get("/iway/search")
 async def iway_search(pickup: str, dropoff: str, currency: str = "GBP", lang: str = "en"):
     """Proxy iWay transfer search: geocode both locations then fetch vehicle prices."""
@@ -1152,7 +1335,11 @@ async def get_iway_booking(booking_id: str):
 
 
 @api_router.put("/iway/bookings/{booking_id}/status")
-async def update_iway_booking_status(booking_id: str, update: IWayBookingStatusUpdate):
+async def update_iway_booking_status(
+    booking_id: str,
+    update: IWayBookingStatusUpdate,
+    background_tasks: BackgroundTasks,
+):
     set_fields: Dict = {}
     if update.payment_status is not None:
         set_fields["payment_status"] = update.payment_status
@@ -1162,6 +1349,13 @@ async def update_iway_booking_status(booking_id: str, update: IWayBookingStatusU
         set_fields["admin_notes"] = update.admin_notes
     if set_fields:
         await db.iway_bookings.update_one({"id": booking_id}, {"$set": set_fields})
+
+    # Send confirmation email when payment is marked complete (only once)
+    if update.payment_status == "payment_completed":
+        booking = await db.iway_bookings.find_one({"id": booking_id}, {"_id": 0})
+        if booking and booking.get("passenger_email") and not booking.get("email_sent"):
+            background_tasks.add_task(_send_booking_confirmation, booking)
+
     return {"ok": True}
 
 

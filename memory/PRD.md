@@ -215,7 +215,14 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] **Trip Summary enriched**: Luggage count and round-trip indicator added to sidebar summary.
 - [x] **Backend uses FINAL edited values**: All form fields in Transfer Details are editable; booking payload uses the final state values.
 
-### Contact Information
+#### Step 3: Confirmation Email via Resend (Apr 8, 2026)
+- [x] Resend integrated (`resend>=2.0.0`, API key in `.env`)
+- [x] `_build_confirmation_html()` — full branded HTML email (inline CSS, table layout)
+- [x] `_send_booking_confirmation()` — async background task, records `email_sent`/`email_id`/`email_error` to `iway_bookings`
+- [x] Email triggered automatically when `payment_status` set to `payment_completed`
+- [x] Guard: only sends once (`not booking.get("email_sent")` check)
+- [x] Admin dashboard shows Email column: Sent / Failed / Pending / —
+- [x] **DOMAIN VERIFICATION REQUIRED** to send to real customers (see below)
 - Email: GBRoyaltransfers@gmail.com
 
 ## API Endpoints
