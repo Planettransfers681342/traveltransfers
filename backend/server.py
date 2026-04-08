@@ -1010,6 +1010,121 @@ def _build_confirmation_html(booking: dict) -> str:
 </body></html>"""
 
 
+_ADMIN_NOTIFY_EMAIL = 'milevgeorgi681@gmail.com'
+
+
+def _build_admin_notification_html(booking: dict) -> str:
+    sym = '£' if booking.get('currency', 'GBP') == 'GBP' else ('€' if booking.get('currency') == 'EUR' else '$')
+    price_str = f"{sym}{float(booking['price']):.2f}" if booking.get('price') else '—'
+    pt_ref = f"PT-{booking['id'][:8].upper()}"
+    date_time = _format_email_date(booking.get('pickup_date', ''))
+    if booking.get('pickup_time'):
+        date_time += f" at {booking['pickup_time']}"
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>New Booking – {pt_ref}</title></head>
+<body style="margin:0;padding:0;background-color:#f5f5f0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f0;padding:32px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+  <tr><td style="background-color:#0f1419;padding:24px 32px;border-radius:10px 10px 0 0;text-align:center;">
+    <p style="margin:0;color:#d4af37;font-size:18px;font-weight:bold;letter-spacing:2px;font-family:Georgia,serif;">PLANET TRANSFERS</p>
+    <p style="margin:6px 0 0;color:#6b7280;font-size:11px;letter-spacing:2px;font-family:Arial,sans-serif;">NEW BOOKING RECEIVED</p>
+  </td></tr>
+
+  <tr><td style="background-color:#d4af37;padding:12px 32px;text-align:center;">
+    <p style="margin:0;color:#0f1419;font-size:13px;font-weight:bold;font-family:Arial,sans-serif;">
+      {pt_ref} &nbsp;·&nbsp; {price_str} &nbsp;·&nbsp; Payment Completed
+    </p>
+  </td></tr>
+
+  <tr><td style="background-color:#ffffff;padding:32px;">
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px;">
+      <tr><td style="background-color:#f9fafb;padding:12px 18px;border-bottom:1px solid #e5e7eb;">
+        <p style="margin:0;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;color:#0f1419;font-family:Arial,sans-serif;">Passenger</p>
+      </td></tr>
+      <tr><td style="padding:14px 18px;">
+        <p style="margin:0;font-size:15px;font-weight:bold;color:#111827;font-family:Arial,sans-serif;">{booking.get('passenger_name','')}</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;font-family:Arial,sans-serif;">{booking.get('passenger_email','')}</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#6b7280;font-family:Arial,sans-serif;">{booking.get('passenger_phone','')}</p>
+      </td></tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px;">
+      <tr><td style="background-color:#f9fafb;padding:12px 18px;border-bottom:1px solid #e5e7eb;">
+        <p style="margin:0;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;color:#0f1419;font-family:Arial,sans-serif;">Transfer Details</p>
+      </td></tr>
+      <tr><td style="padding:14px 18px;">
+        <table width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;width:100px;padding:5px 0;font-family:Arial,sans-serif;vertical-align:top;">From</td>
+            <td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">{booking.get('pickup_location','')}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;vertical-align:top;">To</td>
+            <td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">{booking.get('dropoff_location','')}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;">Date</td>
+            <td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">{date_time}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;">Pax</td>
+            <td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">{booking.get('passengers',1)}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;">Vehicle</td>
+            <td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">{booking.get('vehicle_class','Standard')}</td>
+          </tr>
+          {'<tr><td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;">Flight</td><td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">' + booking['flight_number'] + '</td></tr>' if booking.get('flight_number') else ''}
+          {'<tr><td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;">Sign</td><td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">' + booking['greeting_sign'] + '</td></tr>' if booking.get('greeting_sign') else ''}
+          <tr>
+            <td style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:5px 0;font-family:Arial,sans-serif;">iWay Ref</td>
+            <td style="color:#111827;font-size:13px;font-family:Arial,sans-serif;padding:5px 0;">{booking.get('iway_booker_number','—')}</td>
+          </tr>
+        </table>
+      </td></tr>
+      <tr><td style="background-color:#f9fafb;padding:12px 18px;border-top:1px solid #e5e7eb;">
+        <p style="margin:0;color:#0f1419;font-size:16px;font-weight:bold;font-family:Georgia,serif;">{price_str} &nbsp;<span style="font-size:12px;color:#9ca3af;font-family:Arial,sans-serif;">paid</span></p>
+      </td></tr>
+    </table>
+
+    <p style="margin:0;text-align:center;">
+      <a href="{os.environ.get('CORS_ORIGINS','').split(',')[0].strip()}/admin" style="display:inline-block;background-color:#d4af37;color:#0f1419;font-weight:bold;font-size:13px;padding:12px 28px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;">View in Admin Dashboard</a>
+    </p>
+
+  </td></tr>
+
+  <tr><td style="background-color:#f9fafb;padding:16px 32px;text-align:center;border-radius:0 0 10px 10px;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:10px;font-family:Arial,sans-serif;">Planet Transfers · Admin Notification · {pt_ref}</p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>"""
+
+
+async def _send_admin_notification(booking: dict) -> None:
+    """Send admin alert email for a new paid booking (background task)."""
+    if not resend.api_key:
+        return
+    pt_ref = f"PT-{booking['id'][:8].upper()}"
+    params: Dict = {
+        "from": f"Planet Transfers <{_SENDER_EMAIL}>",
+        "to": [_ADMIN_NOTIFY_EMAIL],
+        "subject": f"New Booking {pt_ref} – {booking.get('passenger_name','')} | Planet Transfers",
+        "html": _build_admin_notification_html(booking),
+    }
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Admin notification sent for {pt_ref}")
+    except Exception as exc:
+        logger.error(f"Admin notification failed for {pt_ref}: {exc}")
+
+
 async def _send_booking_confirmation(booking: dict) -> None:
     """Send booking confirmation email and persist the result to DB (background task)."""
     if not resend.api_key:
@@ -1350,11 +1465,12 @@ async def update_iway_booking_status(
     if set_fields:
         await db.iway_bookings.update_one({"id": booking_id}, {"$set": set_fields})
 
-    # Send confirmation email when payment is marked complete (only once)
+    # Send confirmation email + admin notification when payment is marked complete (only once)
     if update.payment_status == "payment_completed":
         booking = await db.iway_bookings.find_one({"id": booking_id}, {"_id": 0})
         if booking and booking.get("passenger_email") and not booking.get("email_sent"):
             background_tasks.add_task(_send_booking_confirmation, booking)
+            background_tasks.add_task(_send_admin_notification, booking)
 
     return {"ok": True}
 
