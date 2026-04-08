@@ -1377,45 +1377,84 @@ async def iway_book(req: IWayBookingRequest):
         "comment": req.comment or "",
     }
 
-    async with httpx.AsyncClient(timeout=20.0) as client_h:
+    async with httpx.AsyncClient(timeout=25.0) as client_h:
         # ── Step 2: Create order on iWay ─────────────────────────────────────
-        order_resp = await client_h.post(
-            f"{IWAY_API_BASE}/v1/orders",
-            json={"trips": [trip]}
-        )
+        try:
+            order_resp = await client_h.post(
+                f"{IWAY_API_BASE}/v1/orders",
+                json={"trips": [trip]}
+            )
+        except httpx.TimeoutException:
+            await db.iway_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"booking_status": "iway_error", "admin_notes": "iWay orders API timed out"}}
+            )
+            raise HTTPException(status_code=504, detail="The transfer provider did not respond in time. Please try again.")
+
         order_data = order_resp.json()
+        logger.info(f"iWay /v1/orders response status={order_resp.status_code} body={str(order_data)[:500]}")
+
         if order_data.get("error"):
-            err_msg = order_data["error"].get("message", "Booking failed")
+            err_msg = order_data["error"].get("message", "Booking failed at transfer provider")
             await db.iway_bookings.update_one(
                 {"id": internal_id},
                 {"$set": {"booking_status": "iway_error", "admin_notes": err_msg}}
             )
             raise HTTPException(status_code=400, detail=err_msg)
 
-        result = order_data["result"][0]
+        results_list = order_data.get("result") or []
+        if not results_list:
+            raw = str(order_data)[:300]
+            await db.iway_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"booking_status": "iway_error", "admin_notes": f"Empty result: {raw}"}}
+            )
+            raise HTTPException(status_code=400, detail="Transfer provider returned an empty order response. Please try again.")
+
+        result = results_list[0]
         transaction = result["transaction"]
         booker_number = result.get("booker_number", "")
         final_price = result.get("price")
 
         # ── Step 3: Get payment URL ───────────────────────────────────────────
-        pay_resp = await client_h.get(
-            f"{IWAY_API_BASE}/v1/orders/pay-url",
-            params={
-                "transaction": transaction,
-                "trans_host_name": "planettransfers.online",
-                "user_id": IWAY_USER_ID
-            }
-        )
-        pay_data = pay_resp.json()
-        if pay_data.get("error"):
+        try:
+            pay_resp = await client_h.get(
+                f"{IWAY_API_BASE}/v1/orders/pay-url",
+                params={
+                    "transaction": transaction,
+                    "trans_host_name": "planettransfers.online",
+                    "user_id": IWAY_USER_ID
+                }
+            )
+        except httpx.TimeoutException:
             await db.iway_bookings.update_one(
                 {"id": internal_id},
                 {"$set": {"iway_transaction": transaction, "booking_status": "iway_error",
-                          "admin_notes": "pay-url call failed"}}
+                          "admin_notes": "pay-url API timed out"}}
             )
-            raise HTTPException(status_code=400, detail="Could not retrieve payment URL")
+            raise HTTPException(status_code=504, detail="Could not retrieve payment URL (timeout). Please contact support with your booking reference.")
 
-        payment_url = pay_data["result"]["url"]
+        pay_data = pay_resp.json()
+        logger.info(f"iWay /v1/orders/pay-url response status={pay_resp.status_code} body={str(pay_data)[:300]}")
+
+        if pay_data.get("error"):
+            err_detail = pay_data["error"].get("message", "pay-url call failed")
+            await db.iway_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"iway_transaction": transaction, "booking_status": "iway_error",
+                          "admin_notes": err_detail}}
+            )
+            raise HTTPException(status_code=400, detail="Could not retrieve payment URL from transfer provider.")
+
+        payment_url = (pay_data.get("result") or {}).get("url")
+        if not payment_url:
+            raw = str(pay_data)[:300]
+            await db.iway_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"iway_transaction": transaction, "booking_status": "iway_error",
+                          "admin_notes": f"pay-url missing: {raw}"}}
+            )
+            raise HTTPException(status_code=400, detail="Payment URL not found in provider response. Please contact support.")
 
         # ── Step 4: Update our record with iWay data ─────────────────────────
         iway_update: Dict = {"iway_transaction": transaction, "iway_booker_number": booker_number}

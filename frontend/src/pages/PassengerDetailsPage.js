@@ -159,13 +159,13 @@ export default function PassengerDetailsPage() {
     setSubmitting(true);
     setError('');
 
-    // Build comment with sign name appended
-    const commentParts = [];
-    if (contact.comment.trim()) commentParts.push(contact.comment.trim());
-    if (transfer.sign_name.trim()) commentParts.push(`Greeting sign: ${transfer.sign_name.trim()}`);
-
     try {
-      const { data } = await axios.post(`${API}/iway/book`, {
+      // Build comment with sign name appended
+      const commentParts = [];
+      if (contact.comment.trim()) commentParts.push(contact.comment.trim());
+      if (transfer.sign_name.trim()) commentParts.push(`Greeting sign: ${transfer.sign_name.trim()}`);
+
+      const payload = {
         price_id:          vehicle.price_id,
         from_place_id:     fromPlace.place_id,
         to_place_id:       toPlace.place_id,
@@ -183,14 +183,27 @@ export default function PassengerDetailsPage() {
         adults_count:      transfer.adults,
         children_count:    transfer.children,
         comment:           commentParts.join(' | ') || '',
-        // Extra fields for our own DB record
         pickup_location:   searchData.pickup_location,
         dropoff_location:  searchData.dropoff_location,
         luggage_count:     searchData.luggage || 0,
         vehicle_class:     cc.title || 'Standard',
         greeting_sign:     transfer.sign_name.trim() || null,
         displayed_price:   vehicle.price || null,
-      });
+      };
+
+      console.log('[PT] Submitting booking payload:', payload);
+
+      const { data } = await axios.post(`${API}/iway/book`, payload, { timeout: 35000 });
+
+      console.log('[PT] Booking API response:', data);
+
+      // Guard: ensure we actually got a payment URL before redirecting
+      if (!data.payment_url) {
+        console.error('[PT] payment_url missing from response:', data);
+        setError('Payment URL was not returned by the provider. Please try again or contact support.');
+        setSubmitting(false);
+        return;
+      }
 
       // Save booking summary to sessionStorage so success page can display it
       try {
@@ -210,7 +223,6 @@ export default function PassengerDetailsPage() {
           passenger_name:  contact.name.trim(),
           passenger_email: contact.email.trim(),
         }));
-        // Booking state no longer needed — clear it
         sessionStorage.removeItem('pt_booking_state');
       } catch {}
 
@@ -222,9 +234,17 @@ export default function PassengerDetailsPage() {
         dropoff: searchData.dropoff_location,
       });
 
+      console.log('[PT] Redirecting to payment URL:', data.payment_url);
       window.location.href = data.payment_url;
     } catch (err) {
-      setError(err.response?.data?.detail || 'Booking failed. Please check your details and try again.');
+      console.error('[PT] Booking error:', err?.response?.status, err?.response?.data, err?.message);
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string'
+        ? detail
+        : (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout'))
+          ? 'The request timed out. Please try again.'
+          : 'Booking failed. Please check your details and try again.';
+      setError(msg);
       setSubmitting(false);
     }
   };
