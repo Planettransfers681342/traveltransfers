@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { openWhatsApp } from '../utils/whatsapp';
+import { trackEvent } from '../utils/analytics';
 import { XCircle, CarSimple, ArrowLeft } from '@phosphor-icons/react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -10,6 +11,7 @@ export default function PaymentCancel() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    trackEvent('payment_cancel_page_view');
     // Mark the booking as cancelled in our DB
     try {
       const saved = sessionStorage.getItem('pt_booking_summary');

@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react';
 import axios from 'axios';
 import { openWhatsApp } from '../utils/whatsapp';
+import { trackEvent } from '../utils/analytics';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -212,6 +213,14 @@ export default function PassengerDetailsPage() {
         // Booking state no longer needed — clear it
         sessionStorage.removeItem('pt_booking_state');
       } catch {}
+
+      trackEvent('proceed_to_partner_payment', {
+        vehicle_class: cc.title || 'Standard',
+        price: vehicle.price,
+        currency: vehicle.currency || 'GBP',
+        pickup: searchData.pickup_location,
+        dropoff: searchData.dropoff_location,
+      });
 
       window.location.href = data.payment_url;
     } catch (err) {

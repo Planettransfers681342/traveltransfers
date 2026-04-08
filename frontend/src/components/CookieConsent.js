@@ -51,9 +51,11 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!hasConsented()) {
-      // Small delay so it doesn't flash on initial paint
       const t = setTimeout(() => setVisible(true), 800);
       return () => clearTimeout(t);
+    } else {
+      // Returning visitor who already accepted — initialise GA4 straight away
+      import('../utils/analytics').then(m => m.initGA4());
     }
   }, []);
 
@@ -65,6 +67,10 @@ export default function CookieConsent() {
       timestamp: new Date().toISOString(),
     };
     try { localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); } catch {}
+    // Initialise GA4 immediately if analytics accepted (lazy import avoids circular dep)
+    if (prefs.analytics) {
+      import('../utils/analytics').then(m => m.initGA4());
+    }
     setVisible(false);
     setShowPrefs(false);
   };

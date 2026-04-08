@@ -15,6 +15,7 @@ import {
   ArrowCounterClockwise,
 } from '@phosphor-icons/react';
 import axios from 'axios';
+import { trackEvent } from '../utils/analytics';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -90,6 +91,11 @@ export default function IWayResultsPage() {
         params: { pickup: searchData.pickup_location, dropoff: searchData.dropoff_location, currency: 'GBP', lang: 'en' }
       });
       setResults(data);
+      trackEvent('results_viewed', {
+        pickup: searchData.pickup_location,
+        dropoff: searchData.dropoff_location,
+        results_count: data.vehicles?.length || 0,
+      });
     } catch (err) {
       setError(err.response?.data?.detail || 'Unable to find transfers for this route. Please try a different location.');
     } finally {
@@ -98,6 +104,11 @@ export default function IWayResultsPage() {
   };
 
   const handleBook = (vehicle) => {
+    trackEvent('vehicle_selected', {
+      vehicle_class: vehicle.car_class?.title || 'Standard',
+      price: vehicle.price,
+      currency: vehicle.currency || 'GBP',
+    });
     const bookingState = { vehicle, fromPlace: results.from_place, toPlace: results.to_place, searchData };
     // Persist to sessionStorage so passenger details page survives a refresh
     try { sessionStorage.setItem('pt_booking_state', JSON.stringify(bookingState)); } catch {}

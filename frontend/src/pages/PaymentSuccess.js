@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { openWhatsApp } from '../utils/whatsapp';
+import { trackEvent } from '../utils/analytics';
 import {
   CheckCircle, CarSimple, ArrowRight, Envelope,
   MapPin, Calendar, Clock, Users, Airplane, Car
@@ -25,6 +26,7 @@ export default function PaymentSuccess() {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
+    trackEvent('payment_success_page_view');
     try {
       const saved = sessionStorage.getItem('pt_booking_summary');
       if (saved) {

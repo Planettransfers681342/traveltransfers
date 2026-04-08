@@ -1,6 +1,8 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import CookieConsent from "@/components/CookieConsent";
+import { trackPageView } from "@/utils/analytics";
 import HomePage from "@/pages/HomePage";
 import BookingPage from "@/pages/BookingPage";
 import BookNowPage from "@/pages/BookNowPage";
@@ -19,10 +21,20 @@ import QuoteRequest from "@/pages/QuoteRequest";
 import AirportTransferPage from "@/pages/AirportTransferPage";
 import TransferRoutePage from "@/pages/TransferRoutePage";
 
+// Fires page_view on every route change (consent-gated inside trackPageView)
+function AnalyticsTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+  return null;
+}
+
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
+        <AnalyticsTracker />
         <Routes>
           {/* Main Pages */}
           <Route path="/" element={<HomePage />} />

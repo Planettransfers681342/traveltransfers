@@ -33,6 +33,7 @@ const API = `${BACKEND_URL}/api`;
 
 const WHATSAPP_NUMBER = "447739476432";
 import { openWhatsApp } from '../utils/whatsapp';
+import { trackEvent } from '../utils/analytics';
 
 // Hero Images
 const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/bdf6f771-1f03-411b-9d3c-236b42d26b33/images/cc81389a63562a8e56aeb8add76427b4e10b593ddd3d0c4cf0206c0bf4098405.png";
@@ -132,6 +133,15 @@ export default function HomePage() {
       ...formData,
       trip_type: tripType
     };
+
+    trackEvent('search_started', {
+      pickup: formData.pickup_location,
+      dropoff: formData.dropoff_location,
+      date: formData.pickup_date,
+      passengers: formData.passengers,
+      trip_type: tripType,
+    });
+
     // Navigate to iWay results page to show live vehicle options
     navigate('/results', { state: bookingData });
   };

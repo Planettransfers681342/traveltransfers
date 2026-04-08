@@ -19,6 +19,18 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 
 ## Core Features Implemented
 
+### GA4 Event Tracking (Feb 2026)
+- [x] `analytics.js` utility with consent gate (`analyticsAllowed()` check on every call)
+- [x] `search_started` → fires on homepage form submit (HomePage.js)
+- [x] `results_viewed` → fires when iWay results load successfully (IWayResultsPage.js)
+- [x] `vehicle_selected` → fires when user clicks "Book Now" on a vehicle card (IWayResultsPage.js)
+- [x] `proceed_to_partner_payment` → fires just before redirect to payment partner (PassengerDetailsPage.js)
+- [x] `payment_success_page_view` → fires on PaymentSuccess page mount (PaymentSuccess.js)
+- [x] `payment_cancel_page_view` → fires on PaymentCancel page mount (PaymentCancel.js)
+- [x] `page_view` → fires on every route change via AnalyticsTracker in App.js
+- [x] GA4 initialised lazily: only after user accepts analytics cookies (CookieConsent.js)
+- [x] All events are consent-gated — silently no-op if cookies not accepted
+
 ### Phase 1 - Core Features (Feb 10, 2026)
 
 #### Customer Facing
