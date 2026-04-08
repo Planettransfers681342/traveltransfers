@@ -1,5 +1,6 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import CookieConsent from "@/components/CookieConsent";
 import HomePage from "@/pages/HomePage";
 import BookingPage from "@/pages/BookingPage";
 import BookNowPage from "@/pages/BookNowPage";
@@ -52,6 +53,7 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
         </Routes>
+        <CookieConsent />
       </BrowserRouter>
     </div>
   );
