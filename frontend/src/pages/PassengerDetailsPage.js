@@ -308,7 +308,7 @@ export default function PassengerDetailsPage() {
             <div className="bg-slate-900 rounded-xl p-4 text-white">
               <p className="text-xs font-semibold mb-3">Need help?</p>
               <a
-                href="https://wa.me/447739476432?text=Hi%2C%20I%20need%20help%20with%20a%20booking."
+                href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-[#25D366] text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-[#1ebe5d] transition-colors mb-2"

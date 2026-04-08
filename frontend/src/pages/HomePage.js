@@ -32,7 +32,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const WHATSAPP_NUMBER = "447739476432";
-const WHATSAPP_MESSAGE = encodeURIComponent("Hi, I'd like to book a transfer with Planet Transfers");
+const WHATSAPP_URL = "https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking";
 
 // Hero Images
 const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/bdf6f771-1f03-411b-9d3c-236b42d26b33/images/cc81389a63562a8e56aeb8add76427b4e10b593ddd3d0c4cf0206c0bf4098405.png";
@@ -636,7 +636,7 @@ export default function HomePage() {
               <ul className="space-y-2">
                 <li className="flex items-center gap-2">
                   <WhatsappLogo size={18} weight="fill" className="text-green-400" />
-                  <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone size={18} />
@@ -657,7 +657,7 @@ export default function HomePage() {
 
       {/* WhatsApp Float Button */}
       <a 
-        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`} 
+        href={WHATSAPP_URL}
         target="_blank" 
         rel="noopener noreferrer"
         className="whatsapp-float"

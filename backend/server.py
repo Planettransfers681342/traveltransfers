@@ -992,7 +992,7 @@ def _build_confirmation_html(booking: dict) -> str:
         <p style="margin:0 0 6px;color:#ffffff;font-size:14px;font-weight:bold;font-family:Arial,sans-serif;">Need Help?</p>
         <p style="margin:0 0 14px;color:#9ca3af;font-size:12px;font-family:Arial,sans-serif;">Please quote your reference <strong style="color:#d4af37;">{pt_ref}</strong> when contacting us.</p>
         <a href="mailto:{_SUPPORT_EMAIL}" style="display:inline-block;color:#d4af37;font-size:13px;text-decoration:none;font-family:Arial,sans-serif;margin-bottom:10px;">{_SUPPORT_EMAIL}</a><br>
-        <a href="https://wa.me/447739476432?text=Hi%2C%20I%20need%20help%20with%20my%20booking%20{pt_ref}." style="display:inline-block;background-color:#25D366;color:#ffffff;font-size:12px;font-weight:bold;padding:10px 20px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;margin-top:4px;">WhatsApp: +44 7739 476432</a>
+        <a href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking" style="display:inline-block;background-color:#25D366;color:#ffffff;font-size:12px;font-weight:bold;padding:10px 20px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;margin-top:4px;">WhatsApp: +44 7739 476432</a>
       </td></tr>
     </table>
 

@@ -183,7 +183,7 @@ export default function PaymentSuccess() {
               {SUPPORT_EMAIL}
             </a>
             <a
-              href={`https://wa.me/447739476432?text=${encodeURIComponent(`Hi, I need help with my booking${ref ? ` (Ref: ${ref})` : ''}.`)}`}
+              href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[#25D366] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#1ebe5d] transition-colors"
