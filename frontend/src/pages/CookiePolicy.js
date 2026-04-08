@@ -166,7 +166,7 @@ export default function CookiePolicy() {
           </p>
           <ul>
             <li>Email: privacy@planettransfers.online</li>
-            <li>WhatsApp: +44 773 947 6432</li>
+            <li>WhatsApp: <a href="https://wa.me/447739476432" target="_blank" rel="noopener noreferrer">+44 7739 476432</a></li>
           </ul>
 
           <p className="text-sm text-slate-500 mt-8">

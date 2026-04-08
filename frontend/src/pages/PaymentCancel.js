@@ -54,7 +54,9 @@ export default function PaymentCancel() {
         </button>
 
         <p className="text-center text-xs text-slate-400">
-          Need help? Email us at <a href="mailto:GBRoyaltransfers@gmail.com" className="underline">GBRoyaltransfers@gmail.com</a>
+          Need help? Email <a href="mailto:GBRoyaltransfers@gmail.com" className="underline">GBRoyaltransfers@gmail.com</a>
+          {' '}or{' '}
+          <a href="https://wa.me/447739476432?text=Hi%2C%20I%20need%20help%20with%20a%20booking." target="_blank" rel="noopener noreferrer" className="underline">WhatsApp us</a>
         </p>
       </div>
     </div>
