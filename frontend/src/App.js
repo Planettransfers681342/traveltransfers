@@ -61,6 +61,7 @@ function App() {
           <Route path="/admin/quote/:quoteId" element={<QuoteDetail />} />
           
           {/* Legal Pages */}
+          <Route path="/terms-and-conditions" element={<TermsConditions />} />
           <Route path="/terms-conditions" element={<TermsConditions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />

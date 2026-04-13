@@ -2,187 +2,158 @@ import React from 'react';
 import { CarSimple, ArrowLeft } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 
+const CONTACT_EMAIL = 'GBRoyaltransfers@gmail.com';
+
+function Section({ title, children }) {
+  return (
+    <section className="mb-10">
+      <h2 className="text-xl font-semibold text-slate-900 mb-4 pb-2 border-b border-[#d4af37]/30">
+        {title}
+      </h2>
+      <div className="space-y-3 text-slate-700 leading-relaxed">{children}</div>
+    </section>
+  );
+}
+
+function SubSection({ title, children }) {
+  return (
+    <div className="mb-5">
+      <h3 className="text-base font-semibold text-slate-800 mb-2">{title}</h3>
+      <div className="space-y-2 text-slate-700">{children}</div>
+    </div>
+  );
+}
+
+function BulletList({ items }) {
+  return (
+    <ul className="list-disc pl-6 space-y-1.5 text-slate-700">
+      {items.map((item, i) => <li key={i}>{item}</li>)}
+    </ul>
+  );
+}
+
+function ContactLink() {
+  return (
+    <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#d4af37] hover:underline font-medium">
+      {CONTACT_EMAIL}
+    </a>
+  );
+}
+
 export default function CookiePolicy() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f8f8f6]">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <CarSimple size={28} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </Link>
           <Link to="/" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm">
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
             Back to Home
           </Link>
         </div>
       </header>
 
+      {/* Hero */}
+      <div className="bg-slate-900 text-white py-12">
+        <div className="max-w-4xl mx-auto px-6">
+          <p className="text-[#d4af37] text-xs uppercase tracking-widest font-semibold mb-3">Legal</p>
+          <h1 className="font-['Playfair_Display'] text-4xl font-semibold mb-3">Cookie Policy</h1>
+          <div className="flex flex-wrap gap-6 text-sm text-slate-400">
+            <span>Website: https://planettransfers.online</span>
+            <span>Contact: <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#d4af37] hover:underline">{CONTACT_EMAIL}</a></span>
+          </div>
+        </div>
+      </div>
+
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-semibold text-slate-900 mb-8">Cookie Policy</h1>
-        
-        <div className="prose prose-slate max-w-none">
+
+        <Section title="What Are Cookies">
           <p>
-            This Cookie Policy explains what cookies are, how Planet Transfers uses cookies on our website 
-            (www.planettransfers.online), and your choices regarding cookies.
+            Cookies are small text files stored on your device when you visit our website.
           </p>
+        </Section>
 
-          <h3>What Are Cookies?</h3>
+        <Section title="How We Use Cookies">
+          <p>We use cookies to:</p>
+          <BulletList items={[
+            'Ensure proper website functionality',
+            'Remember your preferences',
+            'Analyse website usage through Google Analytics',
+            'Improve site performance and user experience',
+          ]} />
+        </Section>
+
+        <Section title="Types of Cookies We Use">
+          <SubSection title="Essential Cookies">
+            <p>
+              These are required for the basic operation of the website and cannot be disabled.
+            </p>
+          </SubSection>
+
+          <SubSection title="Analytics Cookies">
+            <p>
+              These help us understand how visitors use the website so we can improve it.
+            </p>
+          </SubSection>
+
+          <SubSection title="Marketing Cookies">
+            <p>
+              These may be used for marketing or advertising purposes if enabled in future.
+            </p>
+          </SubSection>
+        </Section>
+
+        <Section title="Consent">
+          <p>When you visit our website, you can:</p>
+          <BulletList items={[
+            'Accept all cookies',
+            'Reject non-essential cookies',
+            'Manage your preferences',
+          ]} />
+          <p className="mt-3">
+            No non-essential tracking should be activated without user consent.
+          </p>
+        </Section>
+
+        <Section title="Managing Cookies">
           <p>
-            Cookies are small text files that are stored on your computer or mobile device when you visit a website. 
-            They are widely used to make websites work more efficiently and provide information to website owners. 
-            Cookies allow the website to recognize your device and remember certain information about your preferences 
-            or past actions.
+            Users can change their cookie preferences at any time through the cookie banner or browser settings.
           </p>
+        </Section>
 
-          <h3>How We Use Cookies</h3>
+        <Section title="Third-Party Cookies">
           <p>
-            Planet Transfers uses cookies and similar tracking technologies to track activity on our website and hold 
-            certain information. We use cookies for the following purposes:
+            We use third-party services such as Google Analytics GA4, which may collect anonymised usage data in accordance with user consent.
           </p>
+        </Section>
 
-          <h4>Essential Cookies</h4>
+        <Section title="Contact">
           <p>
-            These cookies are necessary for the website to function properly. They enable core functionality such as 
-            security, network management, and account access. You cannot opt out of these cookies as the website 
-            cannot function properly without them.
+            For any questions about cookies or privacy: <ContactLink />
           </p>
-          <ul>
-            <li><strong>Session cookies:</strong> These temporary cookies expire when you close your browser and are used to maintain your session while you navigate our website.</li>
-            <li><strong>Authentication cookies:</strong> These help us identify you when you log in to make a booking or access your account.</li>
-            <li><strong>Security cookies:</strong> These help protect your data and prevent fraudulent use of login credentials.</li>
-          </ul>
+        </Section>
 
-          <h4>Performance & Analytics Cookies</h4>
-          <p>
-            These cookies allow us to count visits and traffic sources so we can measure and improve the performance 
-            of our site. They help us know which pages are the most and least popular and see how visitors move around 
-            the site.
-          </p>
-          <ul>
-            <li><strong>Analytics cookies:</strong> We use these to understand how visitors interact with our website, helping us improve functionality and user experience.</li>
-            <li><strong>Performance cookies:</strong> These collect information about how you use our website, such as which pages you visit most often.</li>
-          </ul>
-
-          <h4>Functionality Cookies</h4>
-          <p>
-            These cookies enable enhanced functionality and personalization. They may be set by us or by third-party 
-            providers whose services we have added to our pages.
-          </p>
-          <ul>
-            <li><strong>Preference cookies:</strong> These remember your preferences such as language, region, and other customizable elements.</li>
-            <li><strong>Feature cookies:</strong> These enable specific website features that you have chosen to use.</li>
-          </ul>
-
-          <h4>Marketing & Advertising Cookies</h4>
-          <p>
-            These cookies are used to track visitors across websites. The intention is to display ads that are relevant 
-            and engaging for the individual user.
-          </p>
-          <ul>
-            <li><strong>Targeting cookies:</strong> These track your browsing habits to enable us to show advertising which is more likely to be of interest to you.</li>
-            <li><strong>Social media cookies:</strong> These allow you to share content directly on social media platforms.</li>
-          </ul>
-
-          <h3>Third-Party Cookies</h3>
-          <p>
-            In addition to our own cookies, we may also use various third-party cookies to report usage statistics of 
-            the website and deliver advertisements on and through the website. These third parties include:
-          </p>
-          <ul>
-            <li><strong>Google Analytics:</strong> For website analytics and performance monitoring</li>
-            <li><strong>Stripe:</strong> For secure payment processing</li>
-            <li><strong>Social Media Platforms:</strong> For social sharing functionality</li>
-          </ul>
-
-          <h3>Managing Your Cookie Preferences</h3>
-          <p>
-            Most web browsers allow you to control cookies through their settings preferences. However, if you limit 
-            the ability of websites to set cookies, you may worsen your overall user experience, since it will no 
-            longer be personalized to you.
-          </p>
-          <p>
-            You can manage your cookie preferences in the following ways:
-          </p>
-          <ul>
-            <li><strong>Browser settings:</strong> You can set your browser to refuse all or some browser cookies, or to alert you when websites set or access cookies.</li>
-            <li><strong>Deleting cookies:</strong> You can delete cookies that have already been set.</li>
-            <li><strong>Private browsing:</strong> You can use private or incognito mode in your browser.</li>
-          </ul>
-
-          <h4>Browser-Specific Instructions:</h4>
-          <ul>
-            <li><strong>Chrome:</strong> Settings → Privacy and Security → Cookies and other site data</li>
-            <li><strong>Firefox:</strong> Options → Privacy & Security → Cookies and Site Data</li>
-            <li><strong>Safari:</strong> Preferences → Privacy → Cookies and website data</li>
-            <li><strong>Edge:</strong> Settings → Cookies and site permissions → Cookies and site data</li>
-          </ul>
-
-          <h3>Cookie Retention</h3>
-          <p>
-            The length of time a cookie will remain on your device depends on whether it is a "persistent" or "session" 
-            cookie. Session cookies will only remain on your device until you stop browsing. Persistent cookies remain 
-            on your device until they expire or are deleted.
-          </p>
-          <table className="w-full border-collapse border border-slate-300 my-6">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="border border-slate-300 p-3 text-left">Cookie Type</th>
-                <th className="border border-slate-300 p-3 text-left">Retention Period</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-slate-300 p-3">Session Cookies</td>
-                <td className="border border-slate-300 p-3">Deleted when browser is closed</td>
-              </tr>
-              <tr>
-                <td className="border border-slate-300 p-3">Authentication Cookies</td>
-                <td className="border border-slate-300 p-3">Up to 30 days</td>
-              </tr>
-              <tr>
-                <td className="border border-slate-300 p-3">Analytics Cookies</td>
-                <td className="border border-slate-300 p-3">Up to 2 years</td>
-              </tr>
-              <tr>
-                <td className="border border-slate-300 p-3">Marketing Cookies</td>
-                <td className="border border-slate-300 p-3">Up to 1 year</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3>Updates to This Policy</h3>
-          <p>
-            We may update this Cookie Policy from time to time to reflect changes in our practices or for other 
-            operational, legal, or regulatory reasons. Please revisit this Cookie Policy regularly to stay informed 
-            about our use of cookies.
-          </p>
-
-          <h3>Contact Us</h3>
-          <p>
-            If you have any questions about our use of cookies or this Cookie Policy, please contact us at:
-          </p>
-          <ul>
-            <li>Email: privacy@planettransfers.online</li>
-            <li>WhatsApp: <a href="https://wa.me/447739476432" target="_blank" rel="noopener noreferrer">+44 7739 476432</a></li>
-          </ul>
-
-          <p className="text-sm text-slate-500 mt-8">
-            Last updated: February 2026
-          </p>
-        </div>
-
-        {/* Footer Links */}
+        {/* Related links */}
         <div className="mt-12 pt-8 border-t border-slate-200">
-          <p className="text-sm text-slate-500 mb-4">Related Legal Documents:</p>
-          <div className="flex gap-6">
-            <Link to="/terms-conditions" className="text-sm text-[#d4af37] hover:underline">Terms & Conditions</Link>
-            <Link to="/privacy-policy" className="text-sm text-[#d4af37] hover:underline">Privacy Policy</Link>
+          <p className="text-sm text-slate-500 mb-4 font-medium">Related Legal Documents</p>
+          <div className="flex flex-wrap gap-6">
+            <Link to="/terms-and-conditions" className="text-sm text-[#d4af37] hover:underline font-medium">Terms &amp; Conditions</Link>
+            <Link to="/privacy-policy" className="text-sm text-[#d4af37] hover:underline font-medium">Privacy Policy</Link>
           </div>
         </div>
       </main>
+
+      <footer className="bg-white border-t border-slate-100 mt-8">
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between text-xs text-slate-400">
+          <span>© {new Date().getFullYear()} Planet Transfers · All rights reserved</span>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-slate-600 transition-colors">{CONTACT_EMAIL}</a>
+        </div>
+      </footer>
     </div>
   );
 }

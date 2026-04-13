@@ -556,7 +556,7 @@ export default function PassengerDetailsPage() {
 
                 <p className="text-[11px] text-slate-400 text-center leading-relaxed">
                   By confirming, you agree to our{' '}
-                  <Link to="/terms-conditions" className="underline hover:text-slate-600">Terms</Link> and{' '}
+                  <Link to="/terms-and-conditions" className="underline hover:text-slate-600">Terms</Link> and{' '}
                   <Link to="/privacy-policy" className="underline hover:text-slate-600">Privacy Policy</Link>.
                 </p>
               </div>
@@ -577,7 +577,7 @@ export default function PassengerDetailsPage() {
             <span className="font-['Playfair_Display'] font-semibold text-slate-900 text-sm">Planet Transfers</span>
           </div>
           <div className="flex gap-4 text-xs text-slate-400">
-            <Link to="/terms-conditions" className="hover:text-slate-600">Terms</Link>
+            <Link to="/terms-and-conditions" className="hover:text-slate-600">Terms</Link>
             <Link to="/privacy-policy" className="hover:text-slate-600">Privacy</Link>
             <span>© {new Date().getFullYear()} Planet Transfers</span>
           </div>

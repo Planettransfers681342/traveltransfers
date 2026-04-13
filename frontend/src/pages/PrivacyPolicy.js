@@ -2,177 +2,187 @@ import React from 'react';
 import { CarSimple, ArrowLeft } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 
+const CONTACT_EMAIL = 'GBRoyaltransfers@gmail.com';
+const EFFECTIVE_DATE = '1 April 2026';
+
+function Section({ title, children }) {
+  return (
+    <section className="mb-10">
+      <h2 className="text-xl font-semibold text-slate-900 mb-4 pb-2 border-b border-[#d4af37]/30">
+        {title}
+      </h2>
+      <div className="space-y-3 text-slate-700 leading-relaxed">{children}</div>
+    </section>
+  );
+}
+
+function BulletList({ items }) {
+  return (
+    <ul className="list-disc pl-6 space-y-1.5 text-slate-700">
+      {items.map((item, i) => <li key={i}>{item}</li>)}
+    </ul>
+  );
+}
+
+function ContactLink() {
+  return (
+    <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#d4af37] hover:underline font-medium">
+      {CONTACT_EMAIL}
+    </a>
+  );
+}
+
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f8f8f6]">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <CarSimple size={28} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </Link>
           <Link to="/" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm">
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
             Back to Home
           </Link>
         </div>
       </header>
 
+      {/* Hero */}
+      <div className="bg-slate-900 text-white py-12">
+        <div className="max-w-4xl mx-auto px-6">
+          <p className="text-[#d4af37] text-xs uppercase tracking-widest font-semibold mb-3">Legal</p>
+          <h1 className="font-['Playfair_Display'] text-4xl font-semibold mb-3">Privacy Policy</h1>
+          <div className="flex flex-wrap gap-6 text-sm text-slate-400">
+            <span>Effective Date: {EFFECTIVE_DATE}</span>
+            <span>Website: https://planettransfers.online</span>
+            <span>Contact: <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#d4af37] hover:underline">{CONTACT_EMAIL}</a></span>
+          </div>
+        </div>
+      </div>
+
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-semibold text-slate-900 mb-8">Privacy Policy</h1>
-        
-        <div className="prose prose-slate max-w-none">
-          <p>
-            The Online Privacy Policy was developed to reaffirm our commitment to the information we collect from users 
-            on PlanetTransfers.online. This policy covers the treatment that Planet Transfers gives to data that identifies 
-            a user; whether the data is collected directly on the website or from other means of collection, such as customer 
-            service or phone calls.
-          </p>
-          <p>
-            The PlanetTransfers.online website contains links to other websites. We therefore recommend that, when redirected 
-            to external pages, you consult the third party privacy policies before sending your personal data.
-          </p>
-          <p>
-            This Privacy Policy will be subject to modifications. Therefore, a periodic review is recommended.
-          </p>
-          <p>
-            We ask for your personal information to be able to book a transfer for you, and make sure you enjoy the best 
-            possible service. In addition, we can use it to get in touch with you, or to send you our latest offers and 
-            special promotions.
-          </p>
 
-          <h3>1. Planet Transfers Collects Personal Information When:</h3>
-          <ul>
-            <li>You register or make a booking on our website;</li>
-            <li>You participate in our promotions or contests;</li>
-            <li>When you contact us through our customer service channels.</li>
-          </ul>
-          <p>
-            We may automatically save some data when you visit one of our platforms. Among this data can be your IP address, 
-            what pages you have visited, what browser you are using and information on what elements you click on the page. 
-            It can also include data about your computer's operating system, the version of the application, the language used, 
-            specific configuration of the device and features.
-          </p>
-          <p>
-            We may obtain personal data from social networks, partners, our transport operators, or other third parties. 
-            For example, we work with affiliate partners that offer our services on other platforms. When making a booking 
-            on one of the platforms of our partners they will send us the information related with your booking.
-          </p>
+        <p className="text-slate-700 leading-relaxed mb-10 text-base bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          Planet Transfers ("we", "us", "our") operates as an intermediary platform facilitating airport transfer bookings through third-party providers.
+          This Privacy Policy explains how we collect, use, and protect your personal data when you use our website.
+        </p>
 
-          <h3>2. Acceptance of Privacy Policy</h3>
-          <p>
-            The user who decides to enter their personal data on our portal declares to know and accept our Privacy Policy. 
-            All collected user information is secured through encrypted internet protocol. All the personal data collected 
-            is incorporated into the Planet Transfers database.
-          </p>
+        <Section title="Information We Collect">
+          <p>We may collect the following information:</p>
+          <BulletList items={[
+            'Full name',
+            'Email address',
+            'Phone number',
+            'Pickup and drop-off locations',
+            'Travel dates and times',
+            'Passenger details',
+            'Flight information (if provided)',
+            'Payment-related information processed by third-party providers',
+          ]} />
+        </Section>
 
-          <h3>3. How We Use Your Information</h3>
-          <p>Planet Transfers uses the information collected for the following general purposes:</p>
-          <ul>
-            <li><strong>Reservations:</strong> We use your personal data to make and manage your reservations, and to send the necessary data to the transport operator that provides the transfer service.</li>
-            <li><strong>Product Updates:</strong> Inform about new products and services of the company;</li>
-            <li><strong>Registry Updates:</strong> Updating user registries;</li>
-            <li><strong>Website Optimization:</strong> Optimize usability of our website;</li>
-            <li><strong>Customer Support:</strong> Respond to the doubts and requests of our users;</li>
-            <li><strong>Marketing:</strong> Carry out communication and marketing campaigns;</li>
-            <li><strong>Communication:</strong> Communicate with our users;</li>
-            <li><strong>Customer Feedback:</strong> We may use your information to send you a questionnaire about your reservation to help us better understand our clients and improve our service.</li>
-            <li><strong>User Accounts:</strong> On our platforms it is possible to create user accounts to manage your reservations, enjoy special offers and manage your personal preferences.</li>
-          </ul>
-          <p>
-            Access to the information collected is restricted to the employees and authorized third parties and service 
-            providers of Planet Transfers. Those who use this information inappropriately will be subject to legal actions.
-          </p>
+        <Section title="How We Use Your Information">
+          <p>We use your data to:</p>
+          <BulletList items={[
+            'Process and manage your booking',
+            'Communicate with you regarding your transfer',
+            'Send booking confirmations and updates',
+            'Provide customer support',
+            'Improve our services and user experience',
+          ]} />
+        </Section>
 
-          <h3>3.1 Use of Location Data (When Applicable)</h3>
+        <Section title="Third-Party Providers">
           <p>
-            If the user has granted the relevant permission, Planet Transfers may collect device location data in order to 
-            provide features related to the booked service, such as determining pick-up points, estimating arrival times, 
-            or validating proper service delivery.
+            We share your data with trusted third parties strictly for booking fulfilment, including:
           </p>
-          <p>
-            Location data is not shared with third parties except when strictly necessary to perform the service (for example, 
-            with the transport operator responsible for the pickup), and it is not used for tracking purposes beyond the scope 
-            of the service.
+          <BulletList items={[
+            'Transfer providers such as iWay and partners',
+            'Email delivery services such as Resend',
+            'Analytics services such as Google Analytics GA4',
+          ]} />
+          <p className="mt-3">
+            Payments are processed by third-party providers. We do not store or process your full payment details.
           </p>
-          <p>
-            The user may disable location access at any time via the device settings.
-          </p>
+        </Section>
 
-          <h3>4. Third Parties We Share Your Data With</h3>
+        <Section title="WhatsApp Communication">
           <p>
-            There are a certain number of companies involved in the services we provide, and we may share your personal data 
-            with them in order to provide the service booked.
+            If you contact us via WhatsApp, your phone number and messages may be used to provide support and booking assistance.
           </p>
-          <p>
-            <strong>TRANSFER OPERATORS:</strong> In order to process bookings your information will be transferred to our 
-            transport operators and their collaborators. We will provide only the necessary information to process your 
-            booking and never payment details or other sensitive information. This may include: lead passenger name, arrival 
-            time and date, flight number, destination, phone number, email, extra services booked, and any other information 
-            needed to process your booking.
-          </p>
-          <p>
-            <strong>ASSOCIATES AND AFFILIATES:</strong> We work with multiple associated companies around the world. Some of 
-            our partners offer or advertise our products. By making a reservation on one of these platforms, they will send 
-            us some of the personal information you have provided them.
-          </p>
-          <p>
-            <strong>COMPETENT AUTHORITIES:</strong> We may share your personal information with government or investigating 
-            authorities if required by law, such as court orders, subpoenas, or other legal proceedings.
-          </p>
-          <p>
-            <strong>THIRD-PARTY SERVICE PROVIDERS:</strong> We may use third-party services to process your personal data, 
-            for example in our customer service department, or to send your reservation information to the transport operator. 
-            These third parties are not authorized to use your personal data for any other purpose.
-          </p>
-          <p>
-            <strong>PAYMENT PROCESSING:</strong> We work with third party service providers to manage payments. If you request 
-            a refund, we may need to share certain reservation information with the payment service provider and the 
-            corresponding financial entity.
-          </p>
+        </Section>
 
-          <h3>5. Control Over Your Data</h3>
-          <p>
-            Unless judicially determined, the user's information registered on Planet Transfers platforms will never be used 
-            for any purposes not specified in this agreement, nor will be transferred to third parties that are not authorized 
-            partners or companies.
+        <Section title="Cookies and Tracking">
+          <p>We use cookies to:</p>
+          <BulletList items={[
+            'Ensure website functionality',
+            'Analyse user behaviour through Google Analytics',
+            'Improve performance',
+          ]} />
+          <p className="mt-3">
+            Tracking is only activated after user consent via our cookie banner.
           </p>
-          <p>
-            The user guarantees the veracity and accuracy of the personal data provided. Planet Transfers will not be liable 
-            in case of insertion of false or inaccurate data.
-          </p>
-          <p>
-            The user may, at any time, amend or cancel their personal data by sending an email to privacy@planettransfers.online
-          </p>
-          <p>
-            You may, at any time, exercise the rights of access, opposition, rectification or cancellation recognized in the 
-            applicable data protection regulations.
-          </p>
+        </Section>
 
-          <h3>6. Cookies</h3>
-          <p>
-            Planet Transfers also sends, receives and stores cookies. A cookie is a small amount of information which usually 
-            includes a unique anonymous identifier. Please read our <Link to="/cookie-policy" className="text-[#d4af37] hover:underline">Cookie Policy</Link> for more information.
-          </p>
+        <Section title="Data Retention">
+          <p>We retain your data only as long as necessary to:</p>
+          <BulletList items={[
+            'Fulfil bookings',
+            'Comply with legal obligations',
+            'Resolve disputes',
+          ]} />
+        </Section>
 
-          <h3>7. Data Controller</h3>
-          <p>
-            Planet Transfers Ltd controls the processing of personal data on its platforms and is committed to protecting 
-            your privacy in accordance with applicable data protection laws.
+        <Section title="Your Rights">
+          <p>You have the right to:</p>
+          <BulletList items={[
+            'Access your personal data',
+            'Request correction',
+            'Request deletion',
+            'Withdraw consent where applicable',
+          ]} />
+          <p className="mt-3">
+            To exercise your rights, contact: <ContactLink />
           </p>
-        </div>
+        </Section>
 
-        {/* Footer Links */}
+        <Section title="Data Security">
+          <p>
+            We implement appropriate technical and organisational measures to protect your data.
+          </p>
+        </Section>
+
+        <Section title="Changes to This Policy">
+          <p>
+            We may update this policy from time to time. Any changes will be published on this page.
+          </p>
+        </Section>
+
+        <Section title="Contact">
+          <p>
+            For any privacy-related inquiries: <ContactLink />
+          </p>
+        </Section>
+
+        {/* Related links */}
         <div className="mt-12 pt-8 border-t border-slate-200">
-          <p className="text-sm text-slate-500 mb-4">Related Legal Documents:</p>
-          <div className="flex gap-6">
-            <Link to="/terms-conditions" className="text-sm text-[#d4af37] hover:underline">Terms & Conditions</Link>
-            <Link to="/cookie-policy" className="text-sm text-[#d4af37] hover:underline">Cookie Policy</Link>
+          <p className="text-sm text-slate-500 mb-4 font-medium">Related Legal Documents</p>
+          <div className="flex flex-wrap gap-6">
+            <Link to="/terms-and-conditions" className="text-sm text-[#d4af37] hover:underline font-medium">Terms &amp; Conditions</Link>
+            <Link to="/cookie-policy" className="text-sm text-[#d4af37] hover:underline font-medium">Cookie Policy</Link>
           </div>
         </div>
       </main>
+
+      <footer className="bg-white border-t border-slate-100 mt-8">
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between text-xs text-slate-400">
+          <span>© {new Date().getFullYear()} Planet Transfers · All rights reserved</span>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-slate-600 transition-colors">{CONTACT_EMAIL}</a>
+        </div>
+      </footer>
     </div>
   );
 }

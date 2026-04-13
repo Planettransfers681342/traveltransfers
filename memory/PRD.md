@@ -19,7 +19,12 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 
 ## Core Features Implemented
 
-### GA4 Event Tracking (Feb 2026)
+### Legal Pages (April 2026)
+- [x] `/privacy-policy` — full rewrite with Planet Transfers branding, contact GBRoyaltransfers@gmail.com
+- [x] `/terms-and-conditions` — full rewrite (12 clauses), new canonical route added to App.js
+- [x] `/terms-conditions` — kept as alias for backwards compat
+- [x] `/cookie-policy` — full rewrite
+- [x] All footer links updated across HomePage.js, IWayResultsPage.js, PassengerDetailsPage.js, BookNowPage.js, CookiePolicy.js, PrivacyPolicy.js, TermsConditions.js
 - [x] `analytics.js` utility with consent gate (`analyticsAllowed()` check on every call)
 - [x] `search_started` → fires on homepage form submit (HomePage.js)
 - [x] `results_viewed` → fires when iWay results load successfully (IWayResultsPage.js)

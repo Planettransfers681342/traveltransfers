@@ -636,7 +636,7 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold text-white mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="/terms-conditions">Terms & Conditions</a></li>
+                <li><a href="/terms-and-conditions">Terms &amp; Conditions</a></li>
                 <li><a href="/privacy-policy">Privacy Policy</a></li>
                 <li><a href="/cookie-policy">Cookie Policy</a></li>
               </ul>

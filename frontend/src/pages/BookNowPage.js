@@ -77,7 +77,7 @@ export default function BookNowPage() {
           <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
             <span className="text-xs text-slate-400">© {new Date().getFullYear()} Planet Transfers</span>
             <div className="flex gap-4 text-xs text-slate-400">
-              <Link to="/terms-conditions" className="hover:text-slate-600">Terms</Link>
+              <Link to="/terms-and-conditions" className="hover:text-slate-600">Terms</Link>
               <Link to="/privacy-policy" className="hover:text-slate-600">Privacy</Link>
             </div>
           </div>

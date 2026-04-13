@@ -357,7 +357,7 @@ export default function IWayResultsPage() {
             <span className="font-['Playfair_Display'] font-semibold text-slate-900 text-sm">Planet Transfers</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-400">
-            <Link to="/terms-conditions" className="hover:text-slate-600 transition-colors">Terms</Link>
+            <Link to="/terms-and-conditions" className="hover:text-slate-600 transition-colors">Terms</Link>
             <Link to="/privacy-policy" className="hover:text-slate-600 transition-colors">Privacy</Link>
             <span>© {new Date().getFullYear()} Planet Transfers</span>
           </div>
