@@ -16,6 +16,8 @@ import {
 } from '@phosphor-icons/react';
 import axios from 'axios';
 import { trackEvent } from '../utils/analytics';
+import { CurrencySelector } from '../components/CurrencySelector';
+import { useCurrency } from '../context/CurrencyContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -72,23 +74,25 @@ export default function IWayResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const searchData = location.state;
+  const { currency } = useCurrency();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [results, setResults] = useState(null);
 
+  // Re-fetch whenever currency changes (or on initial mount)
   useEffect(() => {
     if (!searchData) { navigate('/'); return; }
     fetchResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currency]);
 
   const fetchResults = async () => {
     setLoading(true);
     setError('');
     try {
       const { data } = await axios.get(`${API}/iway/search`, {
-        params: { pickup: searchData.pickup_location, dropoff: searchData.dropoff_location, currency: 'GBP', lang: 'en' }
+        params: { pickup: searchData.pickup_location, dropoff: searchData.dropoff_location, currency: currency || searchData.currency || 'GBP', lang: 'en' }
       });
       setResults(data);
       trackEvent('results_viewed', {
@@ -127,14 +131,17 @@ export default function IWayResultsPage() {
             <CarSimple size={28} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-lg font-semibold text-slate-900">Planet Transfers</span>
           </Link>
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
-            data-testid="modify-search-btn"
-          >
-            <ArrowLeft size={16} />
-            Modify Search
-          </button>
+          <div className="flex items-center gap-3">
+            <CurrencySelector />
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+              data-testid="modify-search-btn"
+            >
+              <ArrowLeft size={16} />
+              Modify Search
+            </button>
+          </div>
         </div>
       </nav>
 

@@ -27,6 +27,8 @@ import {
 } from '@phosphor-icons/react';
 import axios from 'axios';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { CurrencySelector } from '../components/CurrencySelector';
+import { useCurrency } from '../context/CurrencyContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -67,6 +69,7 @@ const POPULAR_ROUTES = [
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { currency } = useCurrency();
   const [tripType, setTripType] = useState('one-way');
   const [formData, setFormData] = useState({
     pickup_location: '',
@@ -131,7 +134,8 @@ export default function HomePage() {
     
     const bookingData = {
       ...formData,
-      trip_type: tripType
+      trip_type: tripType,
+      currency,
     };
 
     trackEvent('search_started', {
@@ -200,7 +204,8 @@ export default function HomePage() {
             <CarSimple size={32} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <CurrencySelector />
             <a 
               href="/book"
               className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"

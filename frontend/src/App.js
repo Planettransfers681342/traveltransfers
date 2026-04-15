@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import CookieConsent from "@/components/CookieConsent";
 import { trackPageView } from "@/utils/analytics";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 import HomePage from "@/pages/HomePage";
 import BookingPage from "@/pages/BookingPage";
 import BookNowPage from "@/pages/BookNowPage";
@@ -33,8 +34,9 @@ function AnalyticsTracker() {
 function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <AnalyticsTracker />
+      <CurrencyProvider>
+        <BrowserRouter>
+          <AnalyticsTracker />
         <Routes>
           {/* Main Pages */}
           <Route path="/" element={<HomePage />} />
@@ -66,8 +68,9 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
         </Routes>
-        <CookieConsent />
-      </BrowserRouter>
+          <CookieConsent />
+        </BrowserRouter>
+      </CurrencyProvider>
     </div>
   );
 }

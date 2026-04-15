@@ -9,6 +9,7 @@ import {
 import axios from 'axios';
 import { openWhatsApp } from '../utils/whatsapp';
 import { trackEvent } from '../utils/analytics';
+import { CurrencySelector } from '../components/CurrencySelector';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -261,10 +262,13 @@ export default function PassengerDetailsPage() {
             <CarSimple size={28} weight="fill" className="text-[#d4af37]" />
             <span className="font-['Playfair_Display'] text-lg font-semibold text-slate-900">Planet Transfers</span>
           </Link>
-          <button onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors">
-            <ArrowLeft size={16} />Back to Vehicles
-          </button>
+          <div className="flex items-center gap-3">
+            <CurrencySelector />
+            <button onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors">
+              <ArrowLeft size={16} />Back to Vehicles
+            </button>
+          </div>
         </div>
       </nav>
 
