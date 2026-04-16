@@ -19,7 +19,16 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 
 ## Core Features Implemented
 
-### Legal Pages (April 2026)
+### Talixo Integration — Phase 1 (April 2026, disabled)
+- [x] `/app/backend/talixo_service.py` — full Talixo service: search, create_booking, get_booking, cancel, modify, track_vehicle
+- [x] All Talixo routes in server.py: GET /talixo/status, GET /talixo/search, POST /talixo/book, GET/DELETE/PATCH /talixo/bookings/{id}, GET /talixo/bookings/{id}/track
+- [x] Feature flags: TALIXO_ENABLED=false, TALIXO_API_BOOKING=false
+- [x] Parallel search in IWayResultsPage.js gated by REACT_APP_TALIXO_ENABLED
+- [x] Talixo booking branch in PassengerDetailsPage.js with TalixoConfirmation inline component
+- [x] Supplier badge on vehicle cards (iWay / Talixo)
+- [x] Admin dashboard Talixo tab + stats
+- [x] Admin email notification for manual fulfillment (Phase 1)
+- [x] talixo_bookings MongoDB collection
 - [x] `/privacy-policy` — full rewrite with Planet Transfers branding, contact GBRoyaltransfers@gmail.com
 - [x] `/terms-and-conditions` — full rewrite (12 clauses), new canonical route added to App.js
 - [x] `/terms-conditions` — kept as alias for backwards compat

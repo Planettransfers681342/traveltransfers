@@ -20,6 +20,12 @@ from emergentintegrations.payments.stripe.checkout import (
     CheckoutSessionRequest
 )
 
+import talixo_service
+
+# ── Talixo feature flags (read once at startup) ────────────────────────────────
+TALIXO_ENABLED     = os.environ.get("TALIXO_ENABLED", "false").lower() == "true"
+TALIXO_API_BOOKING = os.environ.get("TALIXO_API_BOOKING", "false").lower() == "true"
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -718,6 +724,12 @@ async def get_admin_stats():
         "iway_payment_completed": iway_payment_completed,
         "iway_pending": iway_pending,
         "iway_revenue": round(iway_revenue, 2),
+        # Talixo stats (zero when not enabled)
+        "total_talixo_bookings":   await db.talixo_bookings.count_documents({}),
+        "talixo_confirmed":        await db.talixo_bookings.count_documents({"booking_status": "confirmed"}),
+        "talixo_pending_manual":   await db.talixo_bookings.count_documents({"booking_status": "request_received"}),
+        "talixo_enabled":          TALIXO_ENABLED,
+        "talixo_api_booking":      TALIXO_API_BOOKING,
     }
 
 # ==================== SEED DATA ====================
@@ -1120,7 +1132,7 @@ async def _send_admin_notification(booking: dict) -> None:
         "html": _build_admin_notification_html(booking),
     }
     try:
-        result = await asyncio.to_thread(resend.Emails.send, params)
+        await asyncio.to_thread(resend.Emails.send, params)
         logger.info(f"Admin notification sent for {pt_ref}")
     except Exception as exc:
         logger.error(f"Admin notification failed for {pt_ref}: {exc}")
@@ -1512,6 +1524,463 @@ async def update_iway_booking_status(
             background_tasks.add_task(_send_booking_confirmation, booking)
             background_tasks.add_task(_send_admin_notification, booking)
 
+    return {"ok": True}
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  TALIXO INTEGRATION                                                        ║
+# ║  Feature flag: TALIXO_ENABLED (env). All routes return 503 when disabled.  ║
+# ║  API booking flag: TALIXO_API_BOOKING — off until Talixo credit approved.  ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+class TalixoBookingRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id:             str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at:     datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    supplier:       str = "talixo"
+    # Status
+    # request_received  → saved locally, admin creates on Talixo manually (Phase 1)
+    # confirmed         → booking created via Talixo API (Phase 2)
+    # cancelled         → booking cancelled
+    # completed         → ride completed
+    booking_status: str = "request_received"
+    # Trip
+    pickup_location:  str = ""
+    dropoff_location: str = ""
+    pickup_date:      str = ""
+    pickup_time:      str = ""
+    passengers:       int = 1
+    luggage:          int = 1
+    flight_number:    Optional[str] = None
+    greeting_sign:    Optional[str] = None
+    special_wishes:   Optional[str] = None
+    # Vehicle
+    vehicle_class:    str = ""
+    vehicle_id:       str = ""      # Talixo vehicle ID from search
+    car_model:        str = ""
+    price:            Optional[float] = None
+    currency:         str = "GBP"
+    # Customer
+    customer_name:    str = ""
+    customer_email:   str = ""
+    customer_phone:   str = ""
+    # Talixo API refs (populated in Phase 2 when API booking is enabled)
+    talixo_reference:      Optional[str] = None   # e.g. "P4RABLG"
+    external_booking_number: str = ""              # our internal UUID passed to Talixo
+    talixo_response:       Optional[dict] = None  # full raw Talixo booking response
+    # Admin
+    admin_notes:      Optional[str] = None
+    email_sent:       bool = False
+
+
+class TalixoBookingRequest(BaseModel):
+    # Route (address strings — Talixo uses these directly)
+    pickup:           str
+    dropoff:          str
+    pickup_datetime:  str       # "YYYY-MM-DD HH:mm"
+    # Vehicle
+    vehicle_id:       str       # Talixo vehicle ID from search response
+    vehicle_class:    Optional[str] = "Standard"
+    car_model:        Optional[str] = ""
+    displayed_price:  Optional[float] = None
+    currency:         str = "GBP"
+    # Passenger
+    passenger_name:   str
+    passenger_email:  str
+    passenger_phone:  str       # E.164 or any format
+    # Trip details
+    passengers:       int = 1
+    luggage:          int = 1
+    flight_number:    Optional[str] = None
+    greeting_sign:    Optional[str] = None
+    special_wishes:   Optional[str] = None
+    # Our DB labels
+    pickup_location:  Optional[str] = ""
+    dropoff_location: Optional[str] = ""
+
+
+class TalixoModifyRequest(BaseModel):
+    start_time_date: Optional[str] = None
+    start_time_time: Optional[str] = None
+    passengers:      Optional[int] = None
+    luggage:         Optional[int] = None
+    first_name:      Optional[str] = None
+    last_name:       Optional[str] = None
+    mobile:          Optional[str] = None
+    special_wishes:  Optional[str] = None
+
+
+# ── Talixo admin email helper ──────────────────────────────────────────────────
+
+async def _send_talixo_admin_notification(booking: dict) -> None:
+    """Send admin email with full Talixo booking request details for manual fulfillment."""
+    try:
+        admin_email = os.environ.get("ADMIN_EMAIL", os.environ.get("SENDER_EMAIL", ""))
+        sender      = os.environ.get("SENDER_EMAIL", "bookings@planettransfers.online")
+        if not admin_email or not os.environ.get("RESEND_API_KEY"):
+            logger.warning("[Talixo] Admin email skipped — ADMIN_EMAIL or RESEND_API_KEY not set")
+            return
+
+        resend.api_key = os.environ.get("RESEND_API_KEY", "")
+
+        status_badge = (
+            "✅ Created via API" if booking.get("booking_status") == "confirmed"
+            else "⚠️ MANUAL ACTION REQUIRED — Create on Talixo"
+        )
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+          <div style="background:#1e293b;padding:24px 32px">
+            <h2 style="color:#d4af37;margin:0;font-size:22px">New Talixo Booking Request</h2>
+            <p style="color:#94a3b8;margin:8px 0 0;font-size:14px">{status_badge}</p>
+          </div>
+          <div style="padding:32px">
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px;width:40%">Internal ID</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('id','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Pickup</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('pickup_location','')}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Dropoff</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('dropoff_location','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Date &amp; Time</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('pickup_date','')} {booking.get('pickup_time','')}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Passengers</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('passengers',1)}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Luggage</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('luggage',1)}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Flight Number</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('flight_number') or '—'}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Greeting Sign</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('greeting_sign') or '—'}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Vehicle Class</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('vehicle_class','')} — {booking.get('car_model','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Vehicle ID</td>
+                  <td style="padding:8px 0;font-family:monospace;font-size:13px">{booking.get('vehicle_id','')}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Price</td>
+                  <td style="padding:8px 0;font-weight:700;color:#d4af37;font-size:15px">{booking.get('currency','GBP')} {booking.get('price','—')}</td></tr>
+            </table>
+
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+            <h3 style="color:#1e293b;margin:0 0 16px;font-size:16px">Passenger Details</h3>
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:6px 0;color:#64748b;font-size:13px;width:40%">Name</td>
+                  <td style="padding:6px 0;font-weight:600;font-size:13px">{booking.get('customer_name','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:6px 0;color:#64748b;font-size:13px">Email</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('customer_email','')}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b;font-size:13px">Phone</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('customer_phone','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:6px 0;color:#64748b;font-size:13px">Special Wishes</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('special_wishes') or '—'}</td></tr>
+            </table>
+
+            <div style="margin-top:24px;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #f59e0b">
+              <p style="margin:0;font-size:13px;color:#92400e">
+                <strong>Action required:</strong> Log in to your Talixo corporate account and create this booking manually.
+                Use the vehicle ID <strong>{booking.get('vehicle_id','')}</strong> and reference our internal ID
+                <strong>{booking.get('id','')}</strong> for tracking.
+              </p>
+            </div>
+          </div>
+          <div style="background:#f8fafc;padding:16px 32px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#94a3b8">Planet Transfers · Talixo Booking System</p>
+          </div>
+        </div>
+        """
+
+        resend.Emails.send({
+            "from":    sender,
+            "to":      [admin_email],
+            "subject": f"[Talixo] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
+            "html":    html,
+        })
+        logger.info(f"[Talixo] Admin notification sent to {admin_email}")
+    except Exception as e:
+        logger.error(f"[Talixo] Admin notification failed: {e}")
+
+
+# ── Talixo Routes ──────────────────────────────────────────────────────────────
+
+def _talixo_guard():
+    """Raise 503 if Talixo integration is not enabled."""
+    if not TALIXO_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="Talixo integration is not enabled. Set TALIXO_ENABLED=true to activate."
+        )
+
+
+@api_router.get("/talixo/status")
+async def talixo_status():
+    """Returns the current Talixo feature flag state (admin/debug use)."""
+    return {
+        "TALIXO_ENABLED":     TALIXO_ENABLED,
+        "TALIXO_API_BOOKING": TALIXO_API_BOOKING,
+        "api_key_set":        bool(os.environ.get("TALIXO_API_KEY")),
+        "base_url":           talixo_service.TALIXO_BASE_URL,
+    }
+
+
+@api_router.get("/talixo/search")
+async def talixo_search(
+    pickup:     str,
+    dropoff:    str,
+    date:       str,
+    time:       str,
+    passengers: int = 1,
+    luggage:    int = 1,
+    currency:   str = "GBP",
+):
+    """
+    Proxy search to Talixo /vehicles/booking_query/.
+    Returns normalized vehicle list.
+    Requires TALIXO_ENABLED=true.
+    """
+    _talixo_guard()
+    try:
+        result = await talixo_service.search_vehicles(
+            pickup=pickup, dropoff=dropoff,
+            date=date, time=time,
+            passengers=passengers, luggage=luggage,
+            currency=currency,
+        )
+        return result
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Talixo search timed out. Please try again.")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[Talixo] search error: {e}")
+        raise HTTPException(status_code=500, detail="Talixo search failed unexpectedly.")
+
+
+@api_router.post("/talixo/book")
+async def talixo_book(req: TalixoBookingRequest, background_tasks: BackgroundTasks):
+    """
+    Create a Talixo booking.
+
+    Phase 1 (TALIXO_API_BOOKING=false):
+      → Saves booking request to MongoDB (booking_status="request_received")
+      → Emails admin with full details for manual creation on Talixo corporate account
+      → Returns { request_received: true, internal_booking_id: ... }
+
+    Phase 2 (TALIXO_API_BOOKING=true, credit approved):
+      → Creates booking via Talixo API
+      → Saves with booking_status="confirmed" + talixo_reference
+      → Returns { confirmed: true, talixo_reference: ..., internal_booking_id: ... }
+
+    Requires TALIXO_ENABLED=true.
+    """
+    _talixo_guard()
+
+    import re as _re
+    dt_parts = req.pickup_datetime.replace("T", " ")[:16].split(" ")
+    pickup_date = dt_parts[0]
+    pickup_time = dt_parts[1] if len(dt_parts) > 1 else "00:00"
+
+    name_parts  = req.passenger_name.strip().split(" ", 1)
+    first_name  = name_parts[0]
+    last_name   = name_parts[1] if len(name_parts) > 1 else "-"
+
+    internal_id = str(uuid.uuid4())
+
+    # ── Save to DB immediately ─────────────────────────────────────────────────
+    record = TalixoBookingRecord(
+        id                    = internal_id,
+        pickup_location       = req.pickup_location or req.pickup,
+        dropoff_location      = req.dropoff_location or req.dropoff,
+        pickup_date           = pickup_date,
+        pickup_time           = pickup_time,
+        passengers            = req.passengers,
+        luggage               = req.luggage,
+        flight_number         = req.flight_number or None,
+        greeting_sign         = req.greeting_sign  or None,
+        special_wishes        = req.special_wishes or None,
+        vehicle_class         = req.vehicle_class  or "Standard",
+        vehicle_id            = str(req.vehicle_id),
+        car_model             = req.car_model or "",
+        price                 = req.displayed_price,
+        currency              = req.currency,
+        customer_name         = req.passenger_name,
+        customer_email        = req.passenger_email,
+        customer_phone        = req.passenger_phone,
+        external_booking_number = internal_id,
+        booking_status        = "request_received",
+    )
+    record_doc = {k: v for k, v in record.model_dump().items() if v is not None}
+    await db.talixo_bookings.insert_one(record_doc)
+    logger.info(f"[Talixo] Booking request saved: id={internal_id} vehicle={req.vehicle_id}")
+
+    # ── Phase 2: Create via Talixo API (only when TALIXO_API_BOOKING=true) ─────
+    if TALIXO_API_BOOKING:
+        try:
+            phone_e164 = req.passenger_phone.strip()
+            if not phone_e164.startswith("+"):
+                phone_e164 = "+" + _re.sub(r"\D", "", phone_e164)
+
+            talixo_resp = await talixo_service.create_booking(
+                pickup                  = req.pickup,
+                dropoff                 = req.dropoff,
+                date                    = pickup_date,
+                time                    = pickup_time,
+                vehicle_id              = str(req.vehicle_id),
+                first_name              = first_name,
+                last_name               = last_name,
+                email                   = req.passenger_email,
+                mobile                  = phone_e164,
+                passengers              = req.passengers,
+                luggage                 = req.luggage,
+                flight_number           = req.flight_number or None,
+                greeting_sign           = req.greeting_sign  or None,
+                special_wishes          = req.special_wishes or None,
+                external_booking_number = internal_id,
+            )
+
+            talixo_ref = talixo_resp.get("reference_code") or talixo_resp.get("id") or ""
+            await db.talixo_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {
+                    "booking_status":   "confirmed",
+                    "talixo_reference": talixo_ref,
+                    "talixo_response":  talixo_resp,
+                }}
+            )
+            logger.info(f"[Talixo] Booking confirmed via API: ref={talixo_ref} id={internal_id}")
+
+            return {
+                "confirmed":           True,
+                "request_received":    False,
+                "talixo_reference":    talixo_ref,
+                "internal_booking_id": internal_id,
+                "price":               req.displayed_price,
+                "currency":            req.currency,
+            }
+
+        except (ValueError, httpx.TimeoutException) as e:
+            # API failed — fall back to manual request + log
+            logger.error(f"[Talixo] API booking failed, falling back to manual: {e}")
+            await db.talixo_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"booking_status": "request_received", "admin_notes": f"API error: {e}"}}
+            )
+
+    # ── Phase 1 (or fallback): notify admin to create manually ────────────────
+    booking_doc = await db.talixo_bookings.find_one({"id": internal_id}, {"_id": 0})
+    background_tasks.add_task(_send_talixo_admin_notification, booking_doc or record_doc)
+
+    return {
+        "confirmed":           False,
+        "request_received":    True,
+        "internal_booking_id": internal_id,
+        "price":               req.displayed_price,
+        "currency":            req.currency,
+    }
+
+
+@api_router.get("/talixo/bookings")
+async def list_talixo_bookings():
+    """Return all Talixo booking requests newest first (admin use)."""
+    bookings = await db.talixo_bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return bookings
+
+
+@api_router.get("/talixo/bookings/{booking_id}")
+async def get_talixo_booking_local(booking_id: str):
+    """Return a single Talixo booking from our DB by internal ID or Talixo reference."""
+    booking = await db.talixo_bookings.find_one(
+        {"$or": [{"id": booking_id}, {"talixo_reference": booking_id}]}, {"_id": 0}
+    )
+    if not booking:
+        raise HTTPException(status_code=404, detail="Talixo booking not found")
+    return booking
+
+
+@api_router.get("/talixo/bookings/{booking_id}/live")
+async def get_talixo_booking_live(booking_id: str):
+    """
+    Fetch live booking status from Talixo API.
+    booking_id must be the Talixo reference_code (e.g. P4RABLG).
+    Requires TALIXO_ENABLED=true.
+    """
+    _talixo_guard()
+    try:
+        return await talixo_service.get_booking(booking_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@api_router.delete("/talixo/bookings/{booking_id}")
+async def cancel_talixo_booking(booking_id: str):
+    """
+    Cancel a Talixo booking via API and update local DB.
+    booking_id = Talixo reference_code.
+    Requires TALIXO_ENABLED=true.
+    Cancellation policy: free if >3h before pickup; full charge after.
+    """
+    _talixo_guard()
+
+    try:
+        await talixo_service.cancel_booking(booking_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Update our DB record
+    await db.talixo_bookings.update_one(
+        {"talixo_reference": booking_id},
+        {"$set": {"booking_status": "cancelled"}}
+    )
+    logger.info(f"[Talixo] Booking {booking_id} cancelled and DB updated")
+    return {"ok": True, "cancelled": True}
+
+
+@api_router.patch("/talixo/bookings/{booking_id}")
+async def modify_talixo_booking(booking_id: str, updates: TalixoModifyRequest):
+    """
+    Partially modify a Talixo booking via API.
+    booking_id = Talixo reference_code.
+    Requires TALIXO_ENABLED=true.
+    """
+    _talixo_guard()
+
+    update_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No fields provided for modification.")
+
+    try:
+        result = await talixo_service.modify_booking(booking_id, update_dict)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    logger.info(f"[Talixo] Booking {booking_id} modified: {list(update_dict.keys())}")
+    return result
+
+
+@api_router.get("/talixo/bookings/{booking_id}/track")
+async def track_talixo_vehicle(booking_id: str, extended: bool = False):
+    """
+    Get live GPS location of the assigned vehicle.
+    booking_id = Talixo reference_code.
+    Status: initial | driving_to_pickup | at_pickup |
+            client_picked_up | driving_to_destination | at_destination
+    GPS updates every ~10 seconds.
+    Requires TALIXO_ENABLED=true.
+    """
+    _talixo_guard()
+    try:
+        return await talixo_service.track_vehicle(booking_id, extended=extended)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@api_router.put("/talixo/bookings/{booking_id}/status")
+async def update_talixo_booking_status(booking_id: str, update: IWayBookingStatusUpdate):
+    """Update local DB status for a Talixo booking (admin use)."""
+    set_fields: Dict = {}
+    if update.booking_status is not None:
+        set_fields["booking_status"] = update.booking_status
+    if update.admin_notes is not None:
+        set_fields["admin_notes"]    = update.admin_notes
+    if set_fields:
+        await db.talixo_bookings.update_one({"id": booking_id}, {"$set": set_fields})
     return {"ok": True}
 
 

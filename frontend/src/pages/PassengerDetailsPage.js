@@ -14,6 +14,39 @@ import { CurrencySelector } from '../components/CurrencySelector';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Talixo booking returns a "request received" confirmation — no payment redirect
+function TalixoConfirmation({ bookingId, price, currency }) {
+  const navigate = useNavigate();
+  const sym = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£';
+  return (
+    <div className="min-h-screen bg-[#f8f8f6] flex items-center justify-center p-6">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-lg max-w-md w-full p-8 text-center space-y-5">
+        <div className="w-16 h-16 rounded-full bg-green-50 border-2 border-green-200 flex items-center justify-center mx-auto">
+          <CheckCircle size={36} weight="fill" className="text-green-500" />
+        </div>
+        <h1 className="font-['Playfair_Display'] text-2xl font-semibold text-slate-900">
+          Booking Request Received
+        </h1>
+        <p className="text-slate-600 text-sm leading-relaxed">
+          Your transfer request has been received. Our team will confirm your booking
+          and send full details to your email address within a few hours.
+        </p>
+        {price && (
+          <p className="text-lg font-bold text-[#d4af37]">{sym}{price} {currency}</p>
+        )}
+        <p className="text-xs text-slate-400 font-mono">Ref: {bookingId}</p>
+        <button
+          onClick={() => navigate('/')}
+          data-testid="talixo-back-home-btn"
+          className="w-full btn-gold py-3 mt-2"
+        >
+          Back to Home
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function isAirportType(types = []) {
   return (types || []).some(t => t.toLowerCase().includes('airport'));
 }
@@ -95,6 +128,12 @@ export default function PassengerDetailsPage() {
   })();
 
   const { vehicle, fromPlace, toPlace, searchData } = state || {};
+
+  // Detect Talixo supplier
+  const isTalixo = vehicle?.supplier === 'talixo';
+
+  // Talixo Phase 1: shows confirmation inline after request is received
+  const [talixoConfirmed, setTalixoConfirmed] = useState(null);
   const cc = vehicle?.car_class || {};
   const sym = vehicle?.currency === 'GBP' ? '£' : vehicle?.currency === 'EUR' ? '€' : '$';
 
@@ -132,8 +171,17 @@ export default function PassengerDetailsPage() {
   const [error, setError]           = useState('');
 
   // Guard — if state is completely missing (direct URL access), redirect home
-  if (!vehicle || !fromPlace || !toPlace || !searchData) {
+  if (!vehicle || !searchData) {
     return <Navigate to="/" replace />;
+  }
+
+  // Talixo Phase 1: show inline confirmation after booking request received
+  if (talixoConfirmed) {
+    return <TalixoConfirmation
+      bookingId={talixoConfirmed.bookingId}
+      price={talixoConfirmed.price}
+      currency={talixoConfirmed.currency}
+    />;
   }
 
   const handleTransfer = (field, value) =>
@@ -166,6 +214,52 @@ export default function PassengerDetailsPage() {
       if (contact.comment.trim()) commentParts.push(contact.comment.trim());
       if (transfer.sign_name.trim()) commentParts.push(`Greeting sign: ${transfer.sign_name.trim()}`);
 
+      // ── Talixo booking branch ───────────────────────────────────────────────
+      if (isTalixo) {
+        const talixoPayload = {
+          pickup:           searchData.pickup_location,
+          dropoff:          searchData.dropoff_location,
+          pickup_datetime:  `${transfer.pickup_date} ${transfer.pickup_time}`,
+          vehicle_id:       String(vehicle.price_id),
+          vehicle_class:    cc.title || 'Standard',
+          car_model:        vehicle.car_model || '',
+          displayed_price:  vehicle.price || null,
+          currency:         vehicle.currency || 'GBP',
+          passenger_name:   contact.name.trim(),
+          passenger_email:  contact.email.trim(),
+          passenger_phone:  contact.phone.trim(),
+          passengers:       transfer.adults + transfer.children,
+          luggage:          searchData.luggage || 1,
+          flight_number:    transfer.flight_number.trim() || null,
+          greeting_sign:    transfer.sign_name.trim() || null,
+          special_wishes:   commentParts.join(' | ') || null,
+          pickup_location:  searchData.pickup_location,
+          dropoff_location: searchData.dropoff_location,
+        };
+
+        console.log('[PT/Talixo] Submitting booking request:', talixoPayload);
+        const { data } = await axios.post(`${API}/talixo/book`, talixoPayload, { timeout: 35000 });
+        console.log('[PT/Talixo] Booking response:', data);
+
+        trackEvent('proceed_to_partner_payment', {
+          supplier:     'talixo',
+          vehicle_class: cc.title || 'Standard',
+          price:         vehicle.price,
+          currency:      vehicle.currency || 'GBP',
+          pickup:        searchData.pickup_location,
+          dropoff:       searchData.dropoff_location,
+        });
+
+        setTalixoConfirmed({
+          bookingId: data.internal_booking_id,
+          price:     data.price,
+          currency:  data.currency || vehicle.currency || 'GBP',
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      // ── iWay booking branch (existing flow — unchanged) ────────────────────
       const payload = {
         price_id:          vehicle.price_id,
         from_place_id:     fromPlace.place_id,
