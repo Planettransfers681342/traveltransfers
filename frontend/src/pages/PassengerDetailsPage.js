@@ -129,11 +129,13 @@ export default function PassengerDetailsPage() {
 
   const { vehicle, fromPlace, toPlace, searchData } = state || {};
 
-  // Detect Talixo supplier
-  const isTalixo = vehicle?.supplier === 'talixo';
+  // Detect supplier
+  const isTalixo      = vehicle?.supplier === 'talixo';
+  const isMyTransfers = vehicle?.supplier === 'mytransfers';
 
-  // Talixo Phase 1: shows confirmation inline after request is received
-  const [talixoConfirmed, setTalixoConfirmed] = useState(null);
+  // Talixo / MyTransfers Phase 1: shows confirmation inline after request is received
+  const [talixoConfirmed, setTalixoConfirmed]           = useState(null);
+  const [mytransfersConfirmed, setMyTransfersConfirmed] = useState(null);
   const cc = vehicle?.car_class || {};
   const sym = vehicle?.currency === 'GBP' ? '£' : vehicle?.currency === 'EUR' ? '€' : '$';
 
@@ -181,6 +183,15 @@ export default function PassengerDetailsPage() {
       bookingId={talixoConfirmed.bookingId}
       price={talixoConfirmed.price}
       currency={talixoConfirmed.currency}
+    />;
+  }
+
+  // MyTransfers Phase 1: show inline confirmation after booking request received
+  if (mytransfersConfirmed) {
+    return <TalixoConfirmation
+      bookingId={mytransfersConfirmed.bookingId}
+      price={mytransfersConfirmed.price}
+      currency={mytransfersConfirmed.currency}
     />;
   }
 
@@ -254,6 +265,50 @@ export default function PassengerDetailsPage() {
           bookingId: data.internal_booking_id,
           price:     data.price,
           currency:  data.currency || vehicle.currency || 'GBP',
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      // ── MyTransfers booking branch ──────────────────────────────────────────
+      if (isMyTransfers) {
+        const mtPayload = {
+          pickup:            searchData.pickup_location,
+          dropoff:           searchData.dropoff_location,
+          pickup_datetime:   `${transfer.pickup_date} ${transfer.pickup_time}`,
+          transfer_id:       String(vehicle.price_id),
+          session_id:        vehicle.session_id || '',
+          vehicle_class:     cc.title || 'Standard',
+          displayed_price:   vehicle.price || null,
+          currency:          vehicle.currency || 'EUR',
+          passenger_name:    contact.name.trim(),
+          passenger_email:   contact.email.trim(),
+          passenger_phone:   contact.phone.trim(),
+          passenger_country: 'GB',
+          passengers:        transfer.adults + transfer.children,
+          flight_number:     transfer.flight_number.trim() || null,
+          special_requirements: commentParts.join(' | ') || null,
+          pickup_location:   searchData.pickup_location,
+          dropoff_location:  searchData.dropoff_location,
+        };
+
+        console.log('[PT/MyTransfers] Submitting booking request:', mtPayload);
+        const { data } = await axios.post(`${API}/mytransfers/book`, mtPayload, { timeout: 35000 });
+        console.log('[PT/MyTransfers] Booking response:', data);
+
+        trackEvent('proceed_to_partner_payment', {
+          supplier:      'mytransfers',
+          vehicle_class: cc.title || 'Standard',
+          price:         vehicle.price,
+          currency:      vehicle.currency || 'EUR',
+          pickup:        searchData.pickup_location,
+          dropoff:       searchData.dropoff_location,
+        });
+
+        setMyTransfersConfirmed({
+          bookingId: data.internal_booking_id,
+          price:     data.price,
+          currency:  data.currency || vehicle.currency || 'EUR',
         });
         setSubmitting(false);
         return;

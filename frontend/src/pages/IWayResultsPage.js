@@ -21,7 +21,8 @@ import { useCurrency } from '../context/CurrencyContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
-const TALIXO_ENABLED = process.env.REACT_APP_TALIXO_ENABLED === 'true';
+const TALIXO_ENABLED      = process.env.REACT_APP_TALIXO_ENABLED === 'true';
+const MYTRANSFERS_ENABLED = process.env.REACT_APP_MYTRANSFERS_ENABLED === 'true';
 
 const CAR_CLASS_IMAGES = {
   standard:       'https://iway.io/images/new-template/car-classes-slider/standard.webp',
@@ -121,7 +122,25 @@ export default function IWayResultsPage() {
           })
         : Promise.resolve(null);
 
-      const [iwayRes, talixoRes] = await Promise.all([iwayPromise, talixoPromise]);
+      // Fetch MyTransfers results in parallel ONLY when MYTRANSFERS_ENABLED
+      const mytransfersPromise = MYTRANSFERS_ENABLED
+        ? axios.get(`${API}/mytransfers/search`, {
+            params: {
+              pickup:     searchData.pickup_location,
+              dropoff:    searchData.dropoff_location,
+              date:       searchData.pickup_date,
+              time:       searchData.pickup_time,
+              passengers: searchData.passengers || 1,
+              children:   0,
+            }
+          }).catch(err => {
+            // MyTransfers failure is non-fatal — log and continue with other suppliers
+            console.warn('[PT] MyTransfers search failed (non-fatal):', err?.response?.data?.detail || err.message);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const [iwayRes, talixoRes, mytransfersRes] = await Promise.all([iwayPromise, talixoPromise, mytransfersPromise]);
 
       // Tag iWay vehicles with supplier
       const iwayVehicles = (iwayRes.data.vehicles || []).map(v => ({ ...v, supplier: 'iway' }));
@@ -129,10 +148,14 @@ export default function IWayResultsPage() {
       // Merge Talixo vehicles (already tagged supplier: 'talixo' by backend normalizer)
       const talixoVehicles = talixoRes ? (talixoRes.data?.vehicles || []) : [];
 
-      // Combined: iWay first, then Talixo, sorted by price within each group
+      // Merge MyTransfers vehicles (already tagged supplier: 'mytransfers' by backend normalizer)
+      const mytransfersVehicles = mytransfersRes ? (mytransfersRes.data?.vehicles || []) : [];
+
+      // Combined: iWay first, then Talixo, then MyTransfers, sorted by price within each group
       const allVehicles = [
         ...iwayVehicles.sort((a, b) => (a.price || 0) - (b.price || 0)),
         ...talixoVehicles.sort((a, b) => (a.price || 0) - (b.price || 0)),
+        ...mytransfersVehicles.sort((a, b) => (a.price || 0) - (b.price || 0)),
       ];
 
       const combined = {
@@ -142,11 +165,12 @@ export default function IWayResultsPage() {
 
       setResults(combined);
       trackEvent('results_viewed', {
-        pickup:          searchData.pickup_location,
-        dropoff:         searchData.dropoff_location,
-        results_count:   allVehicles.length,
-        iway_count:      iwayVehicles.length,
-        talixo_count:    talixoVehicles.length,
+        pickup:               searchData.pickup_location,
+        dropoff:              searchData.dropoff_location,
+        results_count:        allVehicles.length,
+        iway_count:           iwayVehicles.length,
+        talixo_count:         talixoVehicles.length,
+        mytransfers_count:    mytransfersVehicles.length,
       });
     } catch (err) {
       setError(err.response?.data?.detail || 'Unable to find transfers for this route. Please try a different location.');
@@ -328,6 +352,11 @@ export default function IWayResultsPage() {
                                   Talixo
                                 </span>
                               )}
+                              {vehicle.supplier === 'mytransfers' && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                  MyTransfers
+                                </span>
+                              )}
                               {(!vehicle.supplier || vehicle.supplier === 'iway') && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
                                   iWay
@@ -337,7 +366,7 @@ export default function IWayResultsPage() {
                             {vehicle.car_model && vehicle.supplier === 'talixo' && (
                               <p className="text-xs text-slate-400 mt-0.5">{vehicle.car_model}</p>
                             )}
-                            {models && vehicle.supplier !== 'talixo' && (
+                            {models && vehicle.supplier !== 'talixo' && vehicle.supplier !== 'mytransfers' && (
                               <p className="text-xs text-slate-400 mt-0.5">{models} or similar</p>
                             )}
 

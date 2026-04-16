@@ -21,10 +21,13 @@ from emergentintegrations.payments.stripe.checkout import (
 )
 
 import talixo_service
+import mytransfers_service
 
-# ── Talixo feature flags (read once at startup) ────────────────────────────────
-TALIXO_ENABLED     = os.environ.get("TALIXO_ENABLED", "false").lower() == "true"
-TALIXO_API_BOOKING = os.environ.get("TALIXO_API_BOOKING", "false").lower() == "true"
+# ── Feature flags (read once at startup) ──────────────────────────────────────
+TALIXO_ENABLED         = os.environ.get("TALIXO_ENABLED", "false").lower() == "true"
+TALIXO_API_BOOKING     = os.environ.get("TALIXO_API_BOOKING", "false").lower() == "true"
+MYTRANSFERS_ENABLED     = os.environ.get("MYTRANSFERS_ENABLED", "false").lower() == "true"
+MYTRANSFERS_API_BOOKING = os.environ.get("MYTRANSFERS_API_BOOKING", "false").lower() == "true"
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -730,6 +733,12 @@ async def get_admin_stats():
         "talixo_pending_manual":   await db.talixo_bookings.count_documents({"booking_status": "request_received"}),
         "talixo_enabled":          TALIXO_ENABLED,
         "talixo_api_booking":      TALIXO_API_BOOKING,
+        # MyTransfers stats (zero when not enabled)
+        "total_mytransfers_bookings":  await db.mytransfers_bookings.count_documents({}),
+        "mytransfers_confirmed":       await db.mytransfers_bookings.count_documents({"booking_status": "confirmed"}),
+        "mytransfers_pending_manual":  await db.mytransfers_bookings.count_documents({"booking_status": "request_received"}),
+        "mytransfers_enabled":         MYTRANSFERS_ENABLED,
+        "mytransfers_api_booking":     MYTRANSFERS_API_BOOKING,
     }
 
 # ==================== SEED DATA ====================
@@ -1981,6 +1990,419 @@ async def update_talixo_booking_status(booking_id: str, update: IWayBookingStatu
         set_fields["admin_notes"]    = update.admin_notes
     if set_fields:
         await db.talixo_bookings.update_one({"id": booking_id}, {"$set": set_fields})
+    return {"ok": True}
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  MYTRANSFERS INTEGRATION                                                   ║
+# ║  Feature flag: MYTRANSFERS_ENABLED (env). Returns 503 when disabled.       ║
+# ║  API booking flag: MYTRANSFERS_API_BOOKING — off until credit approved.    ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+class MyTransfersBookingRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id:              str      = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at:      datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    supplier:        str      = "mytransfers"
+    # Status: request_received | confirmed | cancelled | completed
+    booking_status:  str      = "request_received"
+    # Trip
+    pickup_location:   str  = ""
+    dropoff_location:  str  = ""
+    pickup_date:       str  = ""
+    pickup_time:       str  = ""
+    passengers:        int  = 1
+    flight_number:     Optional[str] = None
+    special_requirements: Optional[str] = None
+    # Vehicle
+    vehicle_class:     str  = ""
+    transfer_id:       str  = ""   # MyTransfers transportId from search
+    session_id:        str  = ""   # MyTransfers sessionId from availability search
+    price:             Optional[float] = None
+    currency:          str  = "EUR"
+    # Customer
+    customer_name:    str = ""
+    customer_email:   str = ""
+    customer_phone:   str = ""
+    customer_country: str = "GB"
+    # Location metadata
+    origin_type:      str = "airport"
+    destination_type: str = "airport"
+    # MyTransfers API refs (Phase 2 when API booking enabled)
+    mt_order_id:       Optional[int]  = None   # orderId from MT booking response
+    mt_booking_status: Optional[str]  = None   # status field from MT response
+    mt_response:       Optional[dict] = None   # full raw MT booking response
+    # Admin
+    admin_notes:       Optional[str] = None
+    email_sent:        bool = False
+
+
+class MyTransfersBookingRequest(BaseModel):
+    # Route
+    pickup:           str
+    dropoff:          str
+    pickup_datetime:  str        # "YYYY-MM-DD HH:mm"
+    # Vehicle (from search result)
+    transfer_id:      str        # MyTransfers transportId
+    session_id:       str        # MyTransfers sessionId from availability search
+    vehicle_class:    Optional[str] = "Standard"
+    displayed_price:  Optional[float] = None
+    currency:         str = "EUR"
+    # Passenger
+    passenger_name:   str
+    passenger_email:  str
+    passenger_phone:  str
+    passenger_country: str = "GB"
+    # Trip details
+    passengers:       int = 1
+    flight_number:    Optional[str] = None
+    special_requirements: Optional[str] = None
+    # Location labels for DB
+    pickup_location:  Optional[str] = ""
+    dropoff_location: Optional[str] = ""
+    # Location types (auto-detected if not provided)
+    origin_type:      Optional[str] = None
+    destination_type: Optional[str] = None
+
+
+class MyTransfersStatusUpdate(BaseModel):
+    booking_status: Optional[str] = None
+    admin_notes:    Optional[str] = None
+
+
+# ── MyTransfers admin email helper ────────────────────────────────────────────
+
+async def _send_mytransfers_admin_notification(booking: dict) -> None:
+    """Send admin email with full MyTransfers booking request for manual fulfillment."""
+    try:
+        admin_email = os.environ.get("ADMIN_EMAIL", os.environ.get("SENDER_EMAIL", ""))
+        sender      = os.environ.get("SENDER_EMAIL", "bookings@planettransfers.online")
+        if not admin_email or not os.environ.get("RESEND_API_KEY"):
+            logger.warning("[MyTransfers] Admin email skipped — ADMIN_EMAIL or RESEND_API_KEY not set")
+            return
+
+        resend.api_key = os.environ.get("RESEND_API_KEY", "")
+
+        status_badge = (
+            "✅ Created via API" if booking.get("booking_status") == "confirmed"
+            else "⚠️ MANUAL ACTION REQUIRED — Create on MyTransfers"
+        )
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+          <div style="background:#1e293b;padding:24px 32px">
+            <h2 style="color:#d4af37;margin:0;font-size:22px">New MyTransfers Booking Request</h2>
+            <p style="color:#94a3b8;margin:8px 0 0;font-size:14px">{status_badge}</p>
+          </div>
+          <div style="padding:32px">
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px;width:40%">Internal ID</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('id','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Pickup</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('pickup_location','')}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Dropoff</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('dropoff_location','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Date &amp; Time</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('pickup_date','')} {booking.get('pickup_time','')}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Passengers</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('passengers',1)}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Flight Number</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('flight_number') or '—'}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Vehicle Class</td>
+                  <td style="padding:8px 0;font-weight:600;font-size:13px">{booking.get('vehicle_class','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Transfer ID</td>
+                  <td style="padding:8px 0;font-family:monospace;font-size:13px">{booking.get('transfer_id','')}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Session ID</td>
+                  <td style="padding:8px 0;font-family:monospace;font-size:12px">{booking.get('session_id','')[:20]}…</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:8px 0;color:#64748b;font-size:13px">Price</td>
+                  <td style="padding:8px 0;font-weight:700;color:#d4af37;font-size:15px">{booking.get('currency','EUR')} {booking.get('price','—')}</td></tr>
+            </table>
+
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+            <h3 style="color:#1e293b;margin:0 0 16px;font-size:16px">Passenger Details</h3>
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:6px 0;color:#64748b;font-size:13px;width:40%">Name</td>
+                  <td style="padding:6px 0;font-weight:600;font-size:13px">{booking.get('customer_name','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:6px 0;color:#64748b;font-size:13px">Email</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('customer_email','')}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b;font-size:13px">Phone</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('customer_phone','')}</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:6px 0;color:#64748b;font-size:13px">Country</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('customer_country','GB')}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b;font-size:13px">Special Requirements</td>
+                  <td style="padding:6px 0;font-size:13px">{booking.get('special_requirements') or '—'}</td></tr>
+            </table>
+
+            <div style="margin-top:24px;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #f59e0b">
+              <p style="margin:0;font-size:13px;color:#92400e">
+                <strong>Action required:</strong> Log in to your MyTransfers partner account and create this booking manually.
+                Use Transfer ID <strong>{booking.get('transfer_id','')}</strong>, Session ID <strong>{(booking.get('session_id',''))[:20]}…</strong>
+                and reference our internal ID <strong>{booking.get('id','')}</strong> for tracking.
+              </p>
+            </div>
+          </div>
+          <div style="background:#f8fafc;padding:16px 32px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#94a3b8">Planet Transfers · MyTransfers Booking System</p>
+          </div>
+        </div>
+        """
+
+        resend.Emails.send({
+            "from":    sender,
+            "to":      [admin_email],
+            "subject": f"[MyTransfers] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
+            "html":    html,
+        })
+        logger.info(f"[MyTransfers] Admin notification sent to {admin_email}")
+    except Exception as e:
+        logger.error(f"[MyTransfers] Admin notification failed: {e}")
+
+
+# ── MyTransfers guard ─────────────────────────────────────────────────────────
+
+def _mytransfers_guard():
+    """Raise 503 if MyTransfers integration is not enabled."""
+    if not MYTRANSFERS_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="MyTransfers integration is not enabled. Set MYTRANSFERS_ENABLED=true to activate."
+        )
+
+
+# ── MyTransfers Routes ────────────────────────────────────────────────────────
+
+@api_router.get("/mytransfers/status")
+async def mytransfers_status():
+    """Returns the current MyTransfers feature flag state (admin/debug use)."""
+    return {
+        "MYTRANSFERS_ENABLED":     MYTRANSFERS_ENABLED,
+        "MYTRANSFERS_API_BOOKING": MYTRANSFERS_API_BOOKING,
+        "api_key_set":             bool(os.environ.get("MYTRANSFERS_API_KEY")),
+        "base_url":                mytransfers_service.MYTRANSFERS_BASE_URL,
+        "currency":                mytransfers_service.MYTRANSFERS_CURRENCY,
+    }
+
+
+@api_router.get("/mytransfers/search")
+async def mytransfers_search(
+    pickup:     str,
+    dropoff:    str,
+    date:       str,
+    time:       str,
+    passengers: int = 1,
+    children:   int = 0,
+    currency:   str = "EUR",
+):
+    """
+    Proxy search to MyTransfers /{key}/availabilities.
+    Geocodes addresses, returns normalized vehicle list.
+    Requires MYTRANSFERS_ENABLED=true.
+    """
+    _mytransfers_guard()
+    try:
+        result = await mytransfers_service.search_vehicles(
+            pickup=pickup, dropoff=dropoff,
+            date=date, time=time,
+            passengers=passengers, children=children,
+        )
+        return result
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="MyTransfers search timed out. Please try again.")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[MyTransfers] search error: {e}")
+        raise HTTPException(status_code=500, detail="MyTransfers search failed unexpectedly.")
+
+
+@api_router.post("/mytransfers/book")
+async def mytransfers_book(req: MyTransfersBookingRequest, background_tasks: BackgroundTasks):
+    """
+    Create a MyTransfers booking.
+
+    Phase 1 (MYTRANSFERS_API_BOOKING=false):
+      → Saves booking request to MongoDB (booking_status="request_received")
+      → Emails admin with full details for manual creation
+      → Returns { request_received: true, internal_booking_id: ... }
+
+    Phase 2 (MYTRANSFERS_API_BOOKING=true, credit approved):
+      → Creates booking via MyTransfers API
+      → Saves with booking_status="confirmed" + mt_order_id
+      → Returns { confirmed: true, mt_order_id: ..., internal_booking_id: ... }
+
+    Requires MYTRANSFERS_ENABLED=true.
+    """
+    _mytransfers_guard()
+
+    dt_parts    = req.pickup_datetime.replace("T", " ")[:16].split(" ")
+    pickup_date = dt_parts[0]
+    pickup_time = dt_parts[1] if len(dt_parts) > 1 else "00:00"
+
+    name_parts = req.passenger_name.strip().split(" ", 1)
+    first_name = name_parts[0]
+    last_name  = name_parts[1] if len(name_parts) > 1 else "-"
+
+    # Auto-detect location types if not provided
+    origin_type      = req.origin_type      or mytransfers_service._detect_location_type(req.pickup_location or req.pickup)
+    destination_type = req.destination_type or mytransfers_service._detect_location_type(req.dropoff_location or req.dropoff)
+
+    internal_id = str(uuid.uuid4())
+
+    # ── Save to DB immediately ────────────────────────────────────────────────
+    record = MyTransfersBookingRecord(
+        id                   = internal_id,
+        pickup_location      = req.pickup_location or req.pickup,
+        dropoff_location     = req.dropoff_location or req.dropoff,
+        pickup_date          = pickup_date,
+        pickup_time          = pickup_time,
+        passengers           = req.passengers,
+        flight_number        = req.flight_number or None,
+        special_requirements = req.special_requirements or None,
+        vehicle_class        = req.vehicle_class or "Standard",
+        transfer_id          = str(req.transfer_id),
+        session_id           = req.session_id,
+        price                = req.displayed_price,
+        currency             = req.currency,
+        customer_name        = req.passenger_name,
+        customer_email       = req.passenger_email,
+        customer_phone       = req.passenger_phone,
+        customer_country     = req.passenger_country,
+        origin_type          = origin_type,
+        destination_type     = destination_type,
+        booking_status       = "request_received",
+    )
+    record_doc = {k: v for k, v in record.model_dump().items() if v is not None}
+    record_doc["created_at"] = record.created_at.isoformat()
+    await db.mytransfers_bookings.insert_one(record_doc)
+    logger.info(f"[MyTransfers] Booking request saved: id={internal_id} transfer={req.transfer_id}")
+
+    # ── Phase 2: Create via MyTransfers API (only when MYTRANSFERS_API_BOOKING=true) ──
+    if MYTRANSFERS_API_BOOKING:
+        try:
+            mt_resp = await mytransfers_service.create_booking(
+                session_id           = req.session_id,
+                transfer_id          = str(req.transfer_id),
+                first_name           = first_name,
+                last_name            = last_name,
+                email                = req.passenger_email,
+                phone                = req.passenger_phone,
+                country              = req.passenger_country,
+                origin_type          = origin_type,
+                destination_type     = destination_type,
+                origin_address       = req.pickup_location or req.pickup,
+                destination_address  = req.dropoff_location or req.dropoff,
+                flight_number        = req.flight_number or None,
+                arrival_pickup_time  = req.pickup_datetime[:16] if req.flight_number else None,
+                special_requirements = req.special_requirements or None,
+                external_reference   = internal_id,
+            )
+
+            mt_order_id = mt_resp.get("orderId")
+            mt_status   = mt_resp.get("status", "confirmed")
+            await db.mytransfers_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {
+                    "booking_status":  "confirmed",
+                    "mt_order_id":     mt_order_id,
+                    "mt_booking_status": mt_status,
+                    "mt_response":     mt_resp,
+                }}
+            )
+            logger.info(f"[MyTransfers] Booking confirmed via API: orderId={mt_order_id} id={internal_id}")
+
+            return {
+                "confirmed":           True,
+                "request_received":    False,
+                "mt_order_id":         mt_order_id,
+                "internal_booking_id": internal_id,
+                "price":               req.displayed_price,
+                "currency":            req.currency,
+            }
+
+        except (ValueError, httpx.TimeoutException) as e:
+            # API failed — fall back to manual request + log
+            logger.error(f"[MyTransfers] API booking failed, falling back to manual: {e}")
+            await db.mytransfers_bookings.update_one(
+                {"id": internal_id},
+                {"$set": {"booking_status": "request_received", "admin_notes": f"API error: {e}"}}
+            )
+
+    # ── Phase 1 (or fallback): notify admin to create manually ───────────────
+    booking_doc = await db.mytransfers_bookings.find_one({"id": internal_id}, {"_id": 0})
+    background_tasks.add_task(_send_mytransfers_admin_notification, booking_doc or record_doc)
+
+    return {
+        "confirmed":           False,
+        "request_received":    True,
+        "internal_booking_id": internal_id,
+        "price":               req.displayed_price,
+        "currency":            req.currency,
+    }
+
+
+@api_router.get("/mytransfers/bookings")
+async def list_mytransfers_bookings():
+    """Return all MyTransfers booking requests newest first (admin use)."""
+    bookings = await db.mytransfers_bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return bookings
+
+
+@api_router.get("/mytransfers/bookings/{booking_id}")
+async def get_mytransfers_booking_local(booking_id: str):
+    """Return a single MyTransfers booking from our DB by internal ID."""
+    booking = await db.mytransfers_bookings.find_one(
+        {"$or": [{"id": booking_id}, {"mt_order_id": booking_id}]}, {"_id": 0}
+    )
+    if not booking:
+        raise HTTPException(status_code=404, detail="MyTransfers booking not found")
+    return booking
+
+
+@api_router.get("/mytransfers/bookings/{booking_id}/live")
+async def get_mytransfers_booking_live(booking_id: int):
+    """
+    Fetch live booking status from MyTransfers API.
+    booking_id must be the numeric mt_order_id.
+    Requires MYTRANSFERS_ENABLED=true.
+    """
+    _mytransfers_guard()
+    try:
+        return await mytransfers_service.get_booking(booking_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@api_router.delete("/mytransfers/bookings/{booking_id}")
+async def cancel_mytransfers_booking(booking_id: int):
+    """
+    Cancel a MyTransfers booking via API and update local DB.
+    booking_id = numeric mt_order_id.
+    Requires MYTRANSFERS_ENABLED=true.
+    """
+    _mytransfers_guard()
+    try:
+        await mytransfers_service.cancel_booking(booking_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    await db.mytransfers_bookings.update_one(
+        {"mt_order_id": booking_id},
+        {"$set": {"booking_status": "cancelled"}}
+    )
+    logger.info(f"[MyTransfers] Booking {booking_id} cancelled and DB updated")
+    return {"ok": True, "cancelled": True}
+
+
+@api_router.put("/mytransfers/bookings/{booking_id}/status")
+async def update_mytransfers_booking_status(booking_id: str, update: MyTransfersStatusUpdate):
+    """Update local DB status for a MyTransfers booking (admin use)."""
+    set_fields: Dict = {}
+    if update.booking_status is not None:
+        set_fields["booking_status"] = update.booking_status
+    if update.admin_notes is not None:
+        set_fields["admin_notes"]    = update.admin_notes
+    if set_fields:
+        await db.mytransfers_bookings.update_one({"id": booking_id}, {"$set": set_fields})
     return {"ok": True}
 
 

@@ -19,6 +19,22 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 
 ## Core Features Implemented
 
+### MyTransfers Integration — Phase 1 (April 2026, disabled)
+- [x] `/app/backend/mytransfers_service.py` — full MyTransfers service: geocode addresses, search_vehicles, create_booking, get_booking, cancel_booking
+- [x] API key in URL path (not header) — authenticated via `MYTRANSFERS_API_KEY` env var
+- [x] Nominatim geocoding for lat/lng conversion (required by MyTransfers availability endpoint)
+- [x] All MyTransfers routes in server.py: GET /mytransfers/status, GET /mytransfers/search, POST /mytransfers/book, GET /mytransfers/bookings, GET /mytransfers/bookings/{id}, GET /mytransfers/bookings/{id}/live, DELETE /mytransfers/bookings/{id}, PUT /mytransfers/bookings/{id}/status
+- [x] Feature flags: MYTRANSFERS_ENABLED=false, MYTRANSFERS_API_BOOKING=false
+- [x] Parallel search in IWayResultsPage.js gated by REACT_APP_MYTRANSFERS_ENABLED
+- [x] MyTransfers booking branch in PassengerDetailsPage.js (reuses TalixoConfirmation component)
+- [x] Supplier badge (purple) on vehicle cards
+- [x] Admin dashboard MyTransfers tab with stats and booking table
+- [x] Admin email notification for manual fulfillment (Phase 1)
+- [x] mytransfers_bookings MongoDB collection
+- [x] API key NEVER hardcoded — only via MYTRANSFERS_API_KEY env var
+- [x] If MyTransfers fails, does NOT affect iWay or Talixo (parallel, non-fatal)
+- [x] Payment model: Invoice billing — Planet Transfers must collect via Stripe before going live
+
 ### Talixo Integration — Phase 1 (April 2026, disabled)
 - [x] `/app/backend/talixo_service.py` — full Talixo service: search, create_booking, get_booking, cancel, modify, track_vehicle
 - [x] All Talixo routes in server.py: GET /talixo/status, GET /talixo/search, POST /talixo/book, GET/DELETE/PATCH /talixo/bookings/{id}, GET /talixo/bookings/{id}/track

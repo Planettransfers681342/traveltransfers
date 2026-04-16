@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
   const [iwayBookings, setIwayBookings] = useState([]);
   const [talixoBookings, setTalixoBookings] = useState([]);
+  const [mytransfersBookings, setMyTransfersBookings] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRouteModal, setShowRouteModal] = useState(false);
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [iwaySearch, setIwaySearch] = useState('');
   const [talixoSearch, setTalixoSearch] = useState('');
+  const [mytransfersSearch, setMyTransfersSearch] = useState('');
   const [routeForm, setRouteForm] = useState({
     from_location: '',
     to_location: '',
@@ -58,13 +60,14 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, bookingsRes, routesRes, quotesRes, iwayRes, talixoRes] = await Promise.all([
+      const [statsRes, bookingsRes, routesRes, quotesRes, iwayRes, talixoRes, mytransfersRes] = await Promise.all([
         axios.get(`${API}/admin/stats`),
         axios.get(`${API}/bookings`),
         axios.get(`${API}/routes/prices`),
         axios.get(`${API}/quotes`),
         axios.get(`${API}/iway/bookings`),
         axios.get(`${API}/talixo/bookings`).catch(() => ({ data: [] })),
+        axios.get(`${API}/mytransfers/bookings`).catch(() => ({ data: [] })),
       ]);
       setStats(statsRes.data);
       setBookings(bookingsRes.data);
@@ -72,6 +75,7 @@ export default function AdminDashboard() {
       setQuotes(quotesRes.data);
       setIwayBookings(iwayRes.data);
       setTalixoBookings(talixoRes.data);
+      setMyTransfersBookings(mytransfersRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -298,6 +302,19 @@ export default function AdminDashboard() {
             {stats.talixo_pending_manual > 0 && (
               <span className="ml-auto bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
                 {stats.talixo_pending_manual}
+              </span>
+            )}
+          </div>
+          <div
+            onClick={() => setActiveTab('mytransfers')}
+            className={`admin-nav-item ${activeTab === 'mytransfers' ? 'active' : ''}`}
+            data-testid="nav-mytransfers"
+          >
+            <CarSimple size={20} />
+            <span>MyTransfers</span>
+            {stats.mytransfers_pending_manual > 0 && (
+              <span className="ml-auto bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {stats.mytransfers_pending_manual}
               </span>
             )}
           </div>
@@ -862,6 +879,157 @@ export default function AdminDashboard() {
                             {b.talixo_reference ? (
                               <span className="font-mono text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                                 {b.talixo_reference}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400">Not yet created</span>
+                            )}
+                            <p className="text-xs text-slate-300 mt-0.5 font-mono">
+                              {(b.id || '').slice(0, 8)}…
+                            </p>
+                          </td>
+                          <td>
+                            <span className={`badge ${
+                              b.booking_status === 'confirmed'        ? 'badge-success' :
+                              b.booking_status === 'request_received' ? 'badge-warning' :
+                              b.booking_status === 'cancelled'        ? 'badge-danger'  : 'badge-info'
+                            }`}>
+                              {b.booking_status === 'request_received' ? 'Pending Manual' : b.booking_status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    }
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MyTransfers Tab */}
+        {activeTab === 'mytransfers' && (
+          <div className="admin-card" data-testid="mytransfers-section">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">MyTransfers Bookings</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {stats.mytransfers_enabled
+                    ? 'MyTransfers integration is ENABLED'
+                    : 'MyTransfers integration is DISABLED (MYTRANSFERS_ENABLED=false)'}
+                  {' · '}
+                  {stats.mytransfers_api_booking
+                    ? 'API booking ON'
+                    : 'API booking OFF — manual fulfillment mode'}
+                </p>
+              </div>
+              <div className="flex gap-3 items-center">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  stats.mytransfers_enabled
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {stats.mytransfers_enabled ? 'Live' : 'Disabled'}
+                </span>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search MyTransfers..."
+                    value={mytransfersSearch}
+                    onChange={(e) => setMyTransfersSearch(e.target.value)}
+                    className="input-field pl-9 h-10 w-56 text-sm"
+                    data-testid="search-mytransfers"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* MyTransfers Stats Row */}
+            <div className="grid grid-cols-3 gap-4 mb-6 mt-4">
+              <div className="bg-slate-50 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-slate-900">{stats.total_mytransfers_bookings || 0}</p>
+                <p className="text-xs text-slate-500 mt-1">Total Requests</p>
+              </div>
+              <div className="bg-amber-50 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-amber-700">{stats.mytransfers_pending_manual || 0}</p>
+                <p className="text-xs text-slate-500 mt-1">Pending Manual</p>
+              </div>
+              <div className="bg-green-50 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-green-700">{stats.mytransfers_confirmed || 0}</p>
+                <p className="text-xs text-slate-500 mt-1">API Confirmed</p>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12">Loading...</div>
+            ) : mytransfersBookings.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                No MyTransfers booking requests yet.
+                {!stats.mytransfers_enabled && (
+                  <p className="text-xs mt-2 text-amber-600">
+                    Set MYTRANSFERS_ENABLED=true and MYTRANSFERS_API_KEY to start receiving bookings.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Customer</th>
+                      <th>Route</th>
+                      <th>Date &amp; Time</th>
+                      <th>Vehicle</th>
+                      <th>Price</th>
+                      <th>MT Order ID</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mytransfersBookings
+                      .filter(b => {
+                        if (!mytransfersSearch) return true;
+                        const q = mytransfersSearch.toLowerCase();
+                        return (
+                          (b.customer_name   || '').toLowerCase().includes(q) ||
+                          (b.customer_email  || '').toLowerCase().includes(q) ||
+                          (b.pickup_location  || '').toLowerCase().includes(q) ||
+                          (b.dropoff_location || '').toLowerCase().includes(q) ||
+                          String(b.mt_order_id  || '').toLowerCase().includes(q) ||
+                          (b.id || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .map(b => (
+                        <tr key={b.id} data-testid={`mytransfers-booking-row-${b.id}`}>
+                          <td>
+                            <p className="font-medium">{b.customer_name}</p>
+                            <p className="text-xs text-slate-500">{b.customer_email}</p>
+                            <p className="text-xs text-slate-400">{b.customer_phone}</p>
+                          </td>
+                          <td>
+                            <p className="font-medium text-sm">{b.pickup_location}</p>
+                            <p className="text-xs text-slate-500">→ {b.dropoff_location}</p>
+                            {b.flight_number && (
+                              <p className="text-xs text-blue-600 mt-0.5">✈ {b.flight_number}</p>
+                            )}
+                          </td>
+                          <td>
+                            <p className="text-sm font-medium">{b.pickup_date}</p>
+                            <p className="text-xs text-slate-500">{b.pickup_time}</p>
+                          </td>
+                          <td>
+                            <p className="text-sm font-semibold">{b.vehicle_class}</p>
+                            <p className="text-xs text-slate-400">{b.passengers} pax</p>
+                            <p className="text-xs text-slate-300 font-mono">ID: {b.transfer_id}</p>
+                          </td>
+                          <td>
+                            <p className="font-bold text-[#d4af37]">
+                              {b.currency} {b.price != null ? Number(b.price).toFixed(2) : '—'}
+                            </p>
+                          </td>
+                          <td>
+                            {b.mt_order_id ? (
+                              <span className="font-mono text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
+                                #{b.mt_order_id}
                               </span>
                             ) : (
                               <span className="text-xs text-slate-400">Not yet created</span>
