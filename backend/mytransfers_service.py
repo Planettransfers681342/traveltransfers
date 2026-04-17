@@ -85,12 +85,16 @@ def _normalize_vehicle(v: dict, session_id: str) -> dict:
     """
     Map a MyTransfers TransferPrice object to the internal Planet Transfers vehicle format.
     session_id is embedded so PassengerDetailsPage can pass it back to the booking endpoint.
+
+    IMPORTANT: The booking API requires the session-scoped 'transferId' (e.g. "6886598xaGN3TpnAb"),
+    NOT the catalog 'transportId' (e.g. 48). We store both for reference.
     """
     return {
         # ── Fields mirroring iWay/Talixo structure (used by frontend directly) ─
-        "price_id":         v.get("transportId"),
+        "price_id":         v.get("transferId"),        # session-scoped token — REQUIRED for booking
+        "transport_id":     v.get("transportId"),       # catalog ID — reference only
         "price":            float(v.get("price") or 0),
-        "currency":         MYTRANSFERS_CURRENCY,
+        "currency":         v.get("currency") or MYTRANSFERS_CURRENCY,
         "car_class": {
             "title":  v.get("transportName") or "Standard",
             "image":  v.get("imageURL") or "",
@@ -110,6 +114,7 @@ def _normalize_vehicle(v: dict, session_id: str) -> dict:
         "min_passengers":   v.get("minPassengers") or 1,
         "max_passengers":   v.get("maxPassengers") or 4,
         "mt_image_url":     v.get("imageURL") or "",
+        "available_extras": v.get("extras") or [],
     }
 
 

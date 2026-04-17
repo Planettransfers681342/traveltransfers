@@ -1,0 +1,198 @@
+{
+  "booking1": {
+    "status": "SUCCESS",
+    "orderId": 2533885,
+    "apiStatus": null,
+    "price": {
+      "transfersPrice": 83.6,
+      "extrasPrice": 0.0,
+      "totalPrice": 83.6,
+      "currency": "EUR"
+    },
+    "vehicle": "Private Sedan (1-4)",
+    "request": {
+      "sessionId": "MjAyNjA0MTcxMjA0MzMwODB0Tkx1ZWpidmNxVm82d3pGWjQ4UDVT",
+      "transferId": "6886598fLUT1RBDts",
+      "customerFirstName": "Planet",
+      "customerLastName": "Transfers",
+      "customerEmail": "test@planettransfers.online",
+      "customerPhone": "+44773947643",
+      "customerCountry": "GB",
+      "originType": "airport",
+      "destinationType": "address",
+      "originAddress": "PMI Airport, Palma de Mallorca",
+      "destinationAddress": "Alc\u00fadia, Mallorca",
+      "arrivalLine": "AA",
+      "arrivalLocator": "1111",
+      "arrivalPickUpTime": "2026-07-12 10:00",
+      "finalPickupDate": "2026-07-12 13:00",
+      "pickupExternalReference": "PT-TEST-BOOKING-1",
+      "lang": "EN"
+    },
+    "response": {
+      "hasMeet": true,
+      "waitTime": 60,
+      "provider24Phone": "(+34) 660 338 774",
+      "meetAndGreet": "Our driver will be waiting for you inside the arrivals hall, in front of GATE C (door number 4)\n\nEMERGENCY CONTACT: Whatsapp (text only) +34 911 880 435",
+      "status": null,
+      "customerEmail": "test@planettransfers.online",
+      "customerFirstName": "Planet",
+      "customerLastName": "Transfers",
+      "customerCountry": "GB",
+      "customerPhone": "+44773947643",
+      "adults": 1,
+      "childs": 0,
+      "infants": 0,
+      "specialRequirements": "",
+      "bookedTransfer": {
+        "transportId": 48,
+        "transportName": "Private Sedan (1-4)",
+        "minPassengers": 1,
+        "maxPassengers": 4,
+        "suitcases": 3,
+        "price": 83.6,
+        "imageURL": "https://d1cj8q6w07zyiq.cloudfront.net/mytransfers/wp-content/uploads/2018/02/sedanblack.jpg"
+      },
+      "bookedDetails": [
+        {
+          "bookingReference": "1242",
+          "bookingExternalReference": "PT-TEST-BOOKING-1",
+          "status": "confirmed",
+          "type": "arrival",
+          "pickup": "PMI Airport, Palma de Mallorca",
+          "dropoff": "Alc\u00fadia, Mallorca",
+          "pickupType": "airport",
+          "dropoffType": "address",
+          "pickUpDate": "2026-07-12 13:00",
+          "pickUpDateFull": "2026-07-12T13:00:00.000+0000",
+          "timeToPickup": 7426526,
+          "externalTransportLine": "AA",
+          "externalTransportLocator": "1111",
+          "externalTransportDate": "2026-07-12 10:00",
+          "arrivalLine": "AA",
+          "arrivalLocator": "1111",
+          "arrivalPickUpTime": "2026-07-12 10:00",
+          "departureLine": "",
+          "departureLocator": "",
+          "departurePickUpTime": null,
+          "extras": [],
+          "transportDate": "2026-07-12 10:00",
+          "transportLocator": "1111",
+          "transportLine": "AA"
+        }
+      ],
+      "totalPrice": {
+        "transfersPrice": 83.6,
+        "extrasPrice": 0.0,
+        "totalPrice": 83.6,
+        "currency": "EUR"
+      },
+      "orderId": 2533885,
+      "driverInfo": null,
+      "driverTracking": null
+    }
+  },
+  "booking2": {
+    "status": "SUCCESS",
+    "orderId": 2533886,
+    "apiStatus": null,
+    "price": {
+      "transfersPrice": 96.69,
+      "extrasPrice": 15.0,
+      "totalPrice": 111.69,
+      "currency": "EUR"
+    },
+    "vehicle": "Private Minivan (1-8)",
+    "extras": "[{\"extraId\": 58, \"amount\": 1}]",
+    "request": {
+      "sessionId": "MjAyNjA0MTcxMjA0MzQwOTZYZk1kQ1Z3a3NQTGdwcnhBUkU5WllI",
+      "transferId": "6886600dpLyhSRQXT",
+      "customerFirstName": "Planet",
+      "customerLastName": "Transfers",
+      "customerEmail": "test@planettransfers.online",
+      "customerPhone": "+44773947643",
+      "customerCountry": "GB",
+      "originType": "address",
+      "destinationType": "airport",
+      "originAddress": "Alc\u00fadia, Mallorca",
+      "destinationAddress": "PMI Airport, Palma de Mallorca",
+      "departureLine": "BB",
+      "departureLocator": "2222",
+      "departurePickUpTime": "2026-07-14 14:00",
+      "finalPickupDate": "2026-07-14 12:00",
+      "pickupExternalReference": "PT-TEST-BOOKING-2",
+      "lang": "EN",
+      "extras": "[{\"extraId\": 58, \"amount\": 1}]"
+    },
+    "response": {
+      "hasMeet": true,
+      "waitTime": 15,
+      "provider24Phone": "(+34) 660 338 774",
+      "meetAndGreet": "",
+      "status": null,
+      "customerEmail": "test@planettransfers.online",
+      "customerFirstName": "Planet",
+      "customerLastName": "Transfers",
+      "customerCountry": "GB",
+      "customerPhone": "+44773947643",
+      "adults": 1,
+      "childs": 0,
+      "infants": 0,
+      "specialRequirements": "",
+      "bookedTransfer": {
+        "transportId": 753,
+        "transportName": "Private Minivan (1-8)",
+        "minPassengers": 1,
+        "maxPassengers": 8,
+        "suitcases": 8,
+        "price": 96.69,
+        "imageURL": "https://d1cj8q6w07zyiq.cloudfront.net/mytransfers/wp-content/uploads/2018/07/1.jpg"
+      },
+      "bookedDetails": [
+        {
+          "bookingReference": "1243",
+          "bookingExternalReference": "PT-TEST-BOOKING-2",
+          "status": "confirmed",
+          "type": "departure",
+          "pickup": "Alc\u00fadia, Mallorca",
+          "dropoff": "PMI Airport, Palma de Mallorca",
+          "pickupType": "address",
+          "dropoffType": "airport",
+          "pickUpDate": "2026-07-14 12:00",
+          "pickUpDateFull": "2026-07-14T12:00:00.000+0000",
+          "timeToPickup": 7595725,
+          "externalTransportLine": "BB",
+          "externalTransportLocator": "2222",
+          "externalTransportDate": "2026-07-14 14:00",
+          "arrivalLine": "",
+          "arrivalLocator": "",
+          "arrivalPickUpTime": null,
+          "departureLine": "BB",
+          "departureLocator": "2222",
+          "departurePickUpTime": "2026-07-14 14:00",
+          "extras": [
+            {
+              "extraId": 58,
+              "extraName": "Booster seat",
+              "amount": 1,
+              "unitPrice": 15.0,
+              "totalPrice": 15.0
+            }
+          ],
+          "transportDate": "2026-07-14 14:00",
+          "transportLocator": "2222",
+          "transportLine": "BB"
+        }
+      ],
+      "totalPrice": {
+        "transfersPrice": 96.69,
+        "extrasPrice": 15.0,
+        "totalPrice": 111.69,
+        "currency": "EUR"
+      },
+      "orderId": 2533886,
+      "driverInfo": null,
+      "driverTracking": null
+    }
+  }
+}
