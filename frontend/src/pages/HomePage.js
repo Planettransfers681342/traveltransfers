@@ -207,10 +207,10 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <a
               href="/fixed-prices"
-              className="text-sm font-medium text-slate-700 hover:text-[#d4af37] transition-colors px-3 py-2"
+              className="text-sm font-semibold text-slate-900 border border-slate-300 hover:border-[#d4af37] hover:text-[#d4af37] transition-colors px-4 py-2.5 rounded-lg"
               data-testid="fixed-prices-nav-link"
             >
-              Fixed Prices
+              Fixed Transfer Prices
             </a>
             <CurrencySelector />
             <a 
