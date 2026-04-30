@@ -15,6 +15,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import BookingDetail from "@/pages/BookingDetail";
 import QuoteDetail from "@/pages/QuoteDetail";
+import FixedPricesPage from "@/pages/FixedPricesPage";
 import TermsConditions from "@/pages/TermsConditions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import CookiePolicy from "@/pages/CookiePolicy";
@@ -45,6 +46,7 @@ function App() {
           <Route path="/results" element={<IWayResultsPage />} />
           <Route path="/passenger-details" element={<PassengerDetailsPage />} />
           <Route path="/quote" element={<QuoteRequest />} />
+          <Route path="/fixed-prices" element={<FixedPricesPage />} />
           
           {/* SEO Destination Pages */}
           <Route path="/airport-transfer/:city" element={<AirportTransferPage />} />

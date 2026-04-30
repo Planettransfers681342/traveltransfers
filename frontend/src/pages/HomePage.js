@@ -205,6 +205,13 @@ export default function HomePage() {
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </div>
           <div className="flex items-center gap-3">
+            <a
+              href="/fixed-prices"
+              className="text-sm font-medium text-slate-700 hover:text-[#d4af37] transition-colors px-3 py-2"
+              data-testid="fixed-prices-nav-link"
+            >
+              Fixed Prices
+            </a>
             <CurrencySelector />
             <a 
               href="/book"
@@ -226,7 +233,6 @@ export default function HomePage() {
             >
               Request Quote
             </button>
-            {/* Admin link removed from public nav — access via /admin directly */}
           </div>
         </div>
       </nav>
