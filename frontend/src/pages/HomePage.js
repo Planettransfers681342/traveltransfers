@@ -52,7 +52,7 @@ const FLEET_IMAGES = {
 const LOCATION_IMAGES = {
   london: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80",
   madrid: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&q=80",
-  seychelles: "https://images.unsplash.com/photo-1537551080512-358ecdf268dc?auto=format&fit=crop&q=80",
+  seychelles: "https://images.unsplash.com/photo-1769961262833-b048f52633a8?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
   switzerland: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&q=80"
 };
 
