@@ -165,11 +165,16 @@ export default function AirportTransferPage() {
                   </li>
                 </ul>
                 <button
-                  onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
-                  className="btn-secondary w-full py-3"
+                  data-testid="airport-quote-btn-main"
+                  onClick={() => {
+                    const qs = new URLSearchParams({ from: destination.airport, to: destination.city }).toString();
+                    window.open(`/quote?${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+                  }}
+                  className="btn-gold w-full py-3"
                 >
                   Request Quote
                 </button>
+                <p className="text-xs text-slate-500 text-center mt-2">For surrounding areas, pricing is confirmed manually</p>
               </div>
             </div>
           </div>
@@ -283,12 +288,19 @@ export default function AirportTransferPage() {
             <Link to="/book" className="btn-gold py-3 px-8">
               Book Now
             </Link>
-            <button
-              onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
-              className="btn-secondary py-3 px-8"
-            >
-              Request Quote
-            </button>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                data-testid="airport-quote-btn-cta"
+                onClick={() => {
+                  const qs = new URLSearchParams({ from: destination.airport, to: destination.city }).toString();
+                  window.open(`/quote?${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+                }}
+                className="btn-gold py-3 px-8"
+              >
+                Request Quote
+              </button>
+              <p className="text-xs text-slate-400">For surrounding areas, pricing is confirmed manually</p>
+            </div>
           </div>
         </div>
       </section>

@@ -214,7 +214,13 @@ export default function HomePage() {
               Book Now
             </a>
             <button 
-              onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
+              onClick={() => {
+                const params = {};
+                if (formData.pickup_location)  params.from = formData.pickup_location;
+                if (formData.dropoff_location) params.to   = formData.dropoff_location;
+                const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
+                window.open(`/quote${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+              }}
               className="btn-secondary py-3 px-6 flex items-center gap-2 text-sm"
               data-testid="request-quote-btn"
             >

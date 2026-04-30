@@ -281,11 +281,37 @@ export default function BookingPage() {
                         </li>
                       ))}
                     </ul>
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-sm text-slate-500">Starts from</span>
-                      <span className="text-2xl font-semibold text-slate-900">
-                        £{prices[vehicle.id]?.toFixed(2) || '---'}
-                      </span>
+                    <div className="pt-4 border-t border-slate-100">
+                      {prices[vehicle.id] > 0 ? (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-500">Starts from</span>
+                          <span className="text-2xl font-semibold text-slate-900">
+                            £{prices[vehicle.id]?.toFixed(2)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            data-testid={`request-quote-${vehicle.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const qs = new URLSearchParams({
+                                from:    bookingData.pickup_location,
+                                to:      bookingData.dropoff_location,
+                                vehicle: vehicle.name,
+                              }).toString();
+                              window.open(`/quote?${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+                            }}
+                            className="btn-gold w-full py-2 text-sm"
+                          >
+                            Request Quote
+                          </button>
+                          <p className="text-xs text-slate-400 text-center">
+                            For surrounding areas, pricing is confirmed manually
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -169,11 +169,16 @@ export default function TransferRoutePage() {
                   For special requirements, large groups, or additional stops along the way.
                 </p>
                 <button
-                  onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
+                  data-testid="route-quote-btn-sidebar"
+                  onClick={() => {
+                    const qs = new URLSearchParams({ from: routeData.from, to: routeData.to }).toString();
+                    window.open(`/quote?${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+                  }}
                   className="btn-gold w-full py-3"
                 >
-                  Request Custom Quote
+                  Request Quote
                 </button>
+                <p className="text-xs text-slate-500 text-center mt-2">For surrounding areas, pricing is confirmed manually</p>
               </div>
             </div>
           </div>
@@ -238,12 +243,19 @@ export default function TransferRoutePage() {
             <Link to="/book" className="btn-gold py-3 px-8">
               Book Now
             </Link>
-            <button
-              onClick={() => window.open('/quote', '_blank', 'width=800,height=900,scrollbars=yes')}
-              className="btn-secondary py-3 px-8"
-            >
-              Request Quote
-            </button>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                data-testid="route-quote-btn-cta"
+                onClick={() => {
+                  const qs = new URLSearchParams({ from: routeData.from, to: routeData.to }).toString();
+                  window.open(`/quote?${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+                }}
+                className="btn-gold py-3 px-8"
+              >
+                Request Quote
+              </button>
+              <p className="text-xs text-slate-400">For surrounding areas, pricing is confirmed manually</p>
+            </div>
           </div>
         </div>
       </section>

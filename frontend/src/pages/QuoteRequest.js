@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { CarSimple, X, CheckCircle, Spinner } from '@phosphor-icons/react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { CarSimple, X, CheckCircle, Spinner, Info } from '@phosphor-icons/react';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { PhoneInput } from '@/components/PhoneInput';
 import axios from 'axios';
@@ -7,29 +8,60 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Vehicle param → dropdown option value mapping
+const VEHICLE_PARAM_MAP = {
+  'standard': 'Standard',
+  'standard class': 'Standard',
+  'standard sedan': 'Standard',
+  'sedan': 'Standard',
+  'business': 'Business',
+  'business class': 'Business',
+  'business sedan': 'Business',
+  'premium sedan': 'Business',
+  'group': 'Group',
+  'group transfer': 'Group',
+  'minivan': 'Group',
+  'van': 'Group',
+  'mpv': 'Group',
+  'bus': 'Bus',
+  'full size bus': 'Bus',
+  'coach': 'Bus',
+};
+
+function resolveVehicleParam(raw) {
+  if (!raw) return '';
+  const key = raw.toLowerCase().trim();
+  return VEHICLE_PARAM_MAP[key] || raw;
+}
+
 export default function QuoteRequest() {
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  
+
+  // Read prefill params from URL query string
+  const prefillFrom    = searchParams.get('from')    || '';
+  const prefillTo      = searchParams.get('to')      || '';
+  const prefillVehicle = resolveVehicleParam(searchParams.get('vehicle') || '');
+  const isPrefilled    = !!(prefillFrom || prefillTo || prefillVehicle);
+
   const [formData, setFormData] = useState({
-    // Trip Details
-    trip_type: 'one-way',
-    pickup_location: '',
-    dropoff_location: '',
-    pickup_date: '',
-    pickup_time: '',
-    return_date: '',
-    return_time: '',
-    passengers: 2,
-    luggage: 2,
-    vehicle_preference: '',
-    // Passenger Details
-    passenger_name: '',
-    passenger_email: '',
-    passenger_phone: '',
-    flight_number: '',
-    special_requests: ''
+    trip_type:          'one-way',
+    pickup_location:    prefillFrom,
+    dropoff_location:   prefillTo,
+    pickup_date:        '',
+    pickup_time:        '',
+    return_date:        '',
+    return_time:        '',
+    passengers:         2,
+    luggage:            2,
+    vehicle_preference: prefillVehicle,
+    passenger_name:     '',
+    passenger_email:    '',
+    passenger_phone:    '',
+    flight_number:      '',
+    special_requests:   ''
   });
 
   const handleInputChange = (e) => {
@@ -148,9 +180,19 @@ export default function QuoteRequest() {
         <div className="bg-white shadow-sm p-8">
           {step === 1 && (
             <div data-testid="quote-step-1">
-              <h1 className="text-2xl font-semibold text-slate-900 mb-6">Trip Details</h1>
-              
-              <form className="space-y-6">
+              <h1 className="text-2xl font-semibold text-slate-900 mb-2">Trip Details</h1>
+
+              {/* Prefill banner */}
+              {isPrefilled && (
+                <div className="flex items-start gap-3 mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg" data-testid="quote-prefill-banner">
+                  <Info size={18} className="text-[#d4af37] mt-0.5 shrink-0" />
+                  <p className="text-sm text-amber-800">
+                    Route details have been pre-filled from the pricing page. Just add your date, time and contact details below.
+                  </p>
+                </div>
+              )}
+
+              <form className="space-y-6 mt-4">
                 {/* Trip Type */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">Trip Type</label>
@@ -321,9 +363,14 @@ export default function QuoteRequest() {
                     onClick={handleNextStep}
                     disabled={!formData.pickup_location || !formData.dropoff_location || !formData.pickup_date || !formData.pickup_time}
                     className="btn-gold w-full py-4"
+                    data-testid="quote-next-step-btn"
                   >
                     Continue to Your Details
                   </button>
+                  <p className="text-xs text-slate-500 text-center mt-3 flex items-center justify-center gap-1">
+                    <Info size={12} />
+                    For surrounding areas, pricing is confirmed manually after submission.
+                  </p>
                 </div>
               </form>
             </div>

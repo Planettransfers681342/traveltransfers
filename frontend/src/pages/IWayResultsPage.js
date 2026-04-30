@@ -271,7 +271,13 @@ export default function IWayResultsPage() {
                 <ArrowsClockwise size={16} /> Try Again
               </button>
               <button
-                onClick={() => navigate('/quote')}
+                onClick={() => {
+                  const qs = new URLSearchParams({
+                    from: searchData?.pickup_location || '',
+                    to:   searchData?.dropoff_location || '',
+                  }).toString();
+                  navigate(`/quote?${qs}`);
+                }}
                 className="flex items-center justify-center gap-2 px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
               >
                 Request a Quote
