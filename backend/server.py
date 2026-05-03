@@ -1013,7 +1013,7 @@ def _build_confirmation_html(booking: dict) -> str:
       <tr><td style="background-color:#0f1419;padding:24px;">
         <p style="margin:0 0 6px;color:#ffffff;font-size:14px;font-weight:bold;font-family:Arial,sans-serif;">Need Help?</p>
         <p style="margin:0 0 14px;color:#9ca3af;font-size:12px;font-family:Arial,sans-serif;">Please quote your reference <strong style="color:#d4af37;">{pt_ref}</strong> when contacting us.</p>
-        <a href="mailto:{_SUPPORT_EMAIL}" style="display:inline-block;color:#d4af37;font-size:13px;text-decoration:none;font-family:Arial,sans-serif;margin-bottom:10px;">{_SUPPORT_EMAIL}</a><br>
+        <a href="mailto:{_ADMIN_NOTIFY_EMAIL}" style="display:inline-block;color:#d4af37;font-size:13px;text-decoration:none;font-family:Arial,sans-serif;margin-bottom:10px;">{_ADMIN_NOTIFY_EMAIL}</a><br>
         <a href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking" style="display:inline-block;background-color:#25D366;color:#ffffff;font-size:12px;font-weight:bold;padding:10px 20px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;margin-top:4px;">WhatsApp: +44 7739 476432</a>
       </td></tr>
     </table>
@@ -1024,7 +1024,12 @@ def _build_confirmation_html(booking: dict) -> str:
   <tr><td style="background-color:#f9fafb;padding:24px 40px;text-align:center;border-radius:0 0 12px 12px;border-top:1px solid #e5e7eb;">
     <p style="margin:0 0 4px;color:#111827;font-size:13px;font-weight:bold;font-family:Arial,sans-serif;">Planet Transfers</p>
     <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;font-family:Arial,sans-serif;">Premium Airport Transfer Service</p>
-    <p style="margin:12px 0 0;color:#d1d5db;font-size:10px;font-family:Arial,sans-serif;">This is an automated confirmation. Please do not reply directly to this email.</p>
+    <p style="margin:10px 0 4px;color:#d1d5db;font-size:10px;font-family:Arial,sans-serif;">
+      <strong>bookings@planettransfers.online</strong> is a no-reply address and is not monitored.
+    </p>
+    <p style="margin:0;color:#9ca3af;font-size:10px;font-family:Arial,sans-serif;">
+      To contact us, reply to this email — your reply will reach our team at <strong>{_ADMIN_NOTIFY_EMAIL}</strong>
+    </p>
   </td></tr>
 
 </table>
@@ -1136,10 +1141,11 @@ async def _send_admin_notification(booking: dict) -> None:
         return
     pt_ref = f"PT-{booking['id'][:8].upper()}"
     params: Dict = {
-        "from": f"Planet Transfers <{_SENDER_EMAIL}>",
-        "to": [_ADMIN_NOTIFY_EMAIL],
-        "subject": f"New Booking {pt_ref} – {booking.get('passenger_name','')} | Planet Transfers",
-        "html": _build_admin_notification_html(booking),
+        "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+        "reply_to": _ADMIN_NOTIFY_EMAIL,
+        "to":       [_ADMIN_NOTIFY_EMAIL],
+        "subject":  f"New Booking {pt_ref} – {booking.get('passenger_name','')} | Planet Transfers",
+        "html":     _build_admin_notification_html(booking),
     }
     try:
         await asyncio.to_thread(resend.Emails.send, params)
@@ -1156,10 +1162,11 @@ async def _send_booking_confirmation(booking: dict) -> None:
 
     pt_ref = f"PT-{booking['id'][:8].upper()}"
     params: Dict = {
-        "from": f"Planet Transfers <{_SENDER_EMAIL}>",
-        "to": [booking["passenger_email"]],
-        "subject": f"Booking Confirmation – {pt_ref} | Planet Transfers",
-        "html": _build_confirmation_html(booking),
+        "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+        "reply_to": _ADMIN_NOTIFY_EMAIL,
+        "to":       [booking["passenger_email"]],
+        "subject":  f"Booking Confirmation – {pt_ref} | Planet Transfers",
+        "html":     _build_confirmation_html(booking),
     }
 
     try:
@@ -1698,10 +1705,11 @@ async def _send_talixo_admin_notification(booking: dict) -> None:
         """
 
         resend.Emails.send({
-            "from":    sender,
-            "to":      [admin_email],
-            "subject": f"[Talixo] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
-            "html":    html,
+            "from":     sender,
+            "reply_to": admin_email,
+            "to":       [admin_email],
+            "subject":  f"[Talixo] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
+            "html":     html,
         })
         logger.info(f"[Talixo] Admin notification sent to {admin_email}")
     except Exception as e:
@@ -2149,10 +2157,11 @@ async def _send_mytransfers_admin_notification(booking: dict) -> None:
         """
 
         resend.Emails.send({
-            "from":    sender,
-            "to":      [admin_email],
-            "subject": f"[MyTransfers] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
-            "html":    html,
+            "from":     sender,
+            "reply_to": admin_email,
+            "to":       [admin_email],
+            "subject":  f"[MyTransfers] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
+            "html":     html,
         })
         logger.info(f"[MyTransfers] Admin notification sent to {admin_email}")
     except Exception as e:
