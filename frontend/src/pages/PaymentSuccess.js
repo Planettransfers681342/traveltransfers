@@ -9,7 +9,7 @@ import {
 } from '@phosphor-icons/react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const SUPPORT_EMAIL = 'GBRoyaltransfers@gmail.com';
+const SUPPORT_EMAIL = 'bookings@planettransfers.online';
 
 function formatDate(d) {
   if (!d) return '';

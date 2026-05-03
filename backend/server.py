@@ -886,8 +886,9 @@ IWAY_API_BASE = "https://ng-api.iwayex.com"
 # ==================== EMAIL (RESEND) ====================
 
 resend.api_key = os.environ.get('RESEND_API_KEY', '')
-_SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
-_SUPPORT_EMAIL = 'GBRoyaltransfers@gmail.com'
+_SENDER_EMAIL      = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+_SUPPORT_EMAIL     = os.environ.get('ADMIN_EMAIL',  'bookings@planettransfers.online')
+_ADMIN_NOTIFY_EMAIL = os.environ.get('ADMIN_EMAIL', 'bookings@planettransfers.online')
 
 
 def _format_email_date(date_str: str) -> str:
@@ -1032,7 +1033,7 @@ def _build_confirmation_html(booking: dict) -> str:
 </body></html>"""
 
 
-_ADMIN_NOTIFY_EMAIL = 'milevgeorgi681@gmail.com'
+_ADMIN_NOTIFY_EMAIL = os.environ.get('ADMIN_EMAIL', 'bookings@planettransfers.online')
 
 
 def _build_admin_notification_html(booking: dict) -> str:
