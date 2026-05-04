@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { openWhatsApp } from '../utils/whatsapp';
+// openWhatsApp import removed — links now use plain <a href> tags
 import { trackEvent } from '../utils/analytics';
 import { XCircle, CarSimple, ArrowLeft } from '@phosphor-icons/react';
 
@@ -59,7 +59,12 @@ export default function PaymentCancel() {
         <p className="text-center text-xs text-slate-400">
           Need help? Email <a href="mailto:GBRoyaltransfers@gmail.com" className="underline">GBRoyaltransfers@gmail.com</a>
           {' '}or{' '}
-          <a href="#whatsapp" onClick={openWhatsApp} className="underline">WhatsApp us</a>
+          <a
+            href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >WhatsApp us</a>
         </p>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { openWhatsApp } from '../utils/whatsapp';
+// openWhatsApp import removed — links now use plain <a href> tags
 import { trackEvent } from '../utils/analytics';
 import {
   CheckCircle, CarSimple, ArrowRight, Envelope,
@@ -186,8 +186,8 @@ export default function PaymentSuccess() {
               {SUPPORT_EMAIL}
             </a>
             <a
-              href="#whatsapp"
-              onClick={openWhatsApp}
+              href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking"
+              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[#25D366] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#1ebe5d] transition-colors"
               data-testid="whatsapp-support-btn"

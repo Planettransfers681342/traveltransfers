@@ -34,7 +34,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const WHATSAPP_NUMBER = "447739476432";
-import { openWhatsApp } from '../utils/whatsapp';
+// openWhatsApp import removed — links now use plain <a href> tags
 import { trackEvent } from '../utils/analytics';
 
 // Hero Images
@@ -663,7 +663,11 @@ export default function HomePage() {
               <ul className="space-y-2">
                 <li className="flex items-center gap-2">
                   <WhatsappLogo size={18} weight="fill" className="text-green-400" />
-                  <a href="#whatsapp" onClick={openWhatsApp} rel="noopener noreferrer">WhatsApp</a>
+                  <a
+                    href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >WhatsApp</a>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone size={18} />
@@ -683,10 +687,9 @@ export default function HomePage() {
       </footer>
 
       {/* WhatsApp Float Button */}
-      <a 
-        href="#whatsapp"
-        onClick={openWhatsApp}
-        target="_blank" 
+      <a
+        href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking"
+        target="_blank"
         rel="noopener noreferrer"
         className="whatsapp-float"
         data-testid="whatsapp-float"

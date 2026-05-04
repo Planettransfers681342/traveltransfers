@@ -1,25 +1,20 @@
+// Single canonical WhatsApp URL — works on ALL devices and ALL browsers
+// wa.me is the official WhatsApp universal link:
+//   Mobile  → opens the WhatsApp app directly
+//   Desktop → opens web.whatsapp.com (WhatsApp Web) — no blocked pages
 const WA_NUMBER = '447739476432';
-const WA_TEXT   = "Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking";
+const WA_TEXT   = 'Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking';
 
-/**
- * Returns the correct WhatsApp URL for the current device.
- *  - Mobile  → wa.me  (opens WhatsApp app, no api.whatsapp.com)
- *  - Desktop → web.whatsapp.com/send  (opens WhatsApp Web directly)
- */
+export const WA_URL = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
+
+// Always returns the same URL — device detection removed (was causing desktop block)
 export function getWhatsAppUrl() {
-  const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    typeof navigator !== 'undefined' ? navigator.userAgent : ''
-  );
-  return isMobile
-    ? `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`
-    : `https://web.whatsapp.com/send?phone=${WA_NUMBER}&text=${WA_TEXT}`;
+  return WA_URL;
 }
 
-/**
- * Opens WhatsApp in a new tab using the device-appropriate URL.
- * Use this in onClick handlers.
- */
+// Legacy helper kept for any remaining onClick usage
+// Prefer: <a href={WA_URL} target="_blank" rel="noopener noreferrer">
 export function openWhatsApp(e) {
   if (e) e.preventDefault();
-  window.open(getWhatsAppUrl(), '_blank', 'noopener,noreferrer');
+  window.open(WA_URL, '_blank', 'noopener,noreferrer');
 }
