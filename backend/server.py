@@ -693,7 +693,52 @@ async def admin_login(login: AdminLogin):
         return {"success": True, "message": "Login successful"}
     raise HTTPException(status_code=401, detail="Invalid password")
 
-@api_router.get("/admin/stats")
+@api_router.post("/admin/test-email")
+async def send_test_email(to_email: str = "GBRoyaltransfers@gmail.com"):
+    """
+    Send a test confirmation email with correct Reply-To headers.
+    Used by admin to verify email config before going live.
+    """
+    if not resend.api_key:
+        raise HTTPException(status_code=503, detail="RESEND_API_KEY not configured")
+
+    test_booking = {
+        "id": "00000000-test-0000-0000-000000000000",
+        "passenger_name":  "Test Customer",
+        "passenger_email": to_email,
+        "pickup_location":  "London Heathrow Airport, UK",
+        "dropoff_location": "London City Centre, UK",
+        "pickup_date":      "2026-07-01",
+        "pickup_time":      "14:00",
+        "passengers":       2,
+        "flight_number":    "BA123",
+        "vehicle_class":    "Business Class",
+        "price":            149.00,
+        "currency":         "GBP",
+        "payment_status":   "payment_completed",
+        "greeting_sign":    "Test Customer",
+    }
+
+    try:
+        pt_ref = "PT-00000000"
+        params: Dict = {
+            "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+            "reply_to": [_REPLY_TO_EMAIL],
+            "to":       [to_email],
+            "subject":  f"[TEST] Booking Confirmation – {pt_ref} | Planet Transfers",
+            "html":     _build_confirmation_html(test_booking),
+            "headers":  {"Reply-To": _REPLY_TO_EMAIL},
+        }
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        return {
+            "sent": True,
+            "to": to_email,
+            "reply_to": _REPLY_TO_EMAIL,
+            "from": _SENDER_EMAIL,
+            "email_id": result.get("id") if isinstance(result, dict) else str(result),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 async def get_admin_stats():
     total_bookings = await db.bookings.count_documents({})
     pending_bookings = await db.bookings.count_documents({"booking_status": "pending"})
@@ -887,8 +932,10 @@ IWAY_API_BASE = "https://ng-api.iwayex.com"
 
 resend.api_key = os.environ.get('RESEND_API_KEY', '')
 _SENDER_EMAIL      = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
-_SUPPORT_EMAIL     = os.environ.get('ADMIN_EMAIL',  'bookings@planettransfers.online')
-_ADMIN_NOTIFY_EMAIL = os.environ.get('ADMIN_EMAIL', 'bookings@planettransfers.online')
+_SUPPORT_EMAIL     = os.environ.get('ADMIN_EMAIL',  'GBRoyaltransfers@gmail.com')
+_ADMIN_NOTIFY_EMAIL = os.environ.get('ADMIN_EMAIL', 'GBRoyaltransfers@gmail.com')
+# Reply-To is hardcoded — this is the monitored inbox customers must reach
+_REPLY_TO_EMAIL    = 'GBRoyaltransfers@gmail.com'
 
 
 def _format_email_date(date_str: str) -> str:
@@ -1013,7 +1060,7 @@ def _build_confirmation_html(booking: dict) -> str:
       <tr><td style="background-color:#0f1419;padding:24px;">
         <p style="margin:0 0 6px;color:#ffffff;font-size:14px;font-weight:bold;font-family:Arial,sans-serif;">Need Help?</p>
         <p style="margin:0 0 14px;color:#9ca3af;font-size:12px;font-family:Arial,sans-serif;">Please quote your reference <strong style="color:#d4af37;">{pt_ref}</strong> when contacting us.</p>
-        <a href="mailto:{_ADMIN_NOTIFY_EMAIL}" style="display:inline-block;color:#d4af37;font-size:13px;text-decoration:none;font-family:Arial,sans-serif;margin-bottom:10px;">{_ADMIN_NOTIFY_EMAIL}</a><br>
+        <a href="mailto:GBRoyaltransfers@gmail.com" style="display:inline-block;color:#d4af37;font-size:13px;text-decoration:none;font-family:Arial,sans-serif;margin-bottom:10px;">GBRoyaltransfers@gmail.com</a><br>
         <a href="https://wa.me/447739476432?text=Hi%2C%20I%27d%20like%20help%20with%20a%20transfer%20booking" style="display:inline-block;background-color:#25D366;color:#ffffff;font-size:12px;font-weight:bold;padding:10px 20px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;margin-top:4px;">WhatsApp: +44 7739 476432</a>
       </td></tr>
     </table>
@@ -1028,8 +1075,10 @@ def _build_confirmation_html(booking: dict) -> str:
       <strong>bookings@planettransfers.online</strong> is a no-reply address and is not monitored.
     </p>
     <p style="margin:0;color:#9ca3af;font-size:10px;font-family:Arial,sans-serif;">
-      To contact us, reply to this email — your reply will reach our team at <strong>{_ADMIN_NOTIFY_EMAIL}</strong>
+      To contact us, reply to this email — your reply will reach our team at <strong>GBRoyaltransfers@gmail.com</strong>
     </p>
+    <p style="margin:6px 0 0;color:#9ca3af;font-size:11px;font-family:Arial,sans-serif;">
+      For any questions: <a href="mailto:GBRoyaltransfers@gmail.com" style="color:#d4af37;">GBRoyaltransfers@gmail.com</a>
   </td></tr>
 
 </table>
@@ -1038,7 +1087,7 @@ def _build_confirmation_html(booking: dict) -> str:
 </body></html>"""
 
 
-_ADMIN_NOTIFY_EMAIL = os.environ.get('ADMIN_EMAIL', 'bookings@planettransfers.online')
+_REPLY_TO_EMAIL = 'GBRoyaltransfers@gmail.com'  # monitored inbox — duplicate safety
 
 
 def _build_admin_notification_html(booking: dict) -> str:
@@ -1142,10 +1191,11 @@ async def _send_admin_notification(booking: dict) -> None:
     pt_ref = f"PT-{booking['id'][:8].upper()}"
     params: Dict = {
         "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
-        "reply_to": _ADMIN_NOTIFY_EMAIL,
+        "reply_to": [_REPLY_TO_EMAIL],
         "to":       [_ADMIN_NOTIFY_EMAIL],
         "subject":  f"New Booking {pt_ref} – {booking.get('passenger_name','')} | Planet Transfers",
         "html":     _build_admin_notification_html(booking),
+        "headers":  {"Reply-To": _REPLY_TO_EMAIL},
     }
     try:
         await asyncio.to_thread(resend.Emails.send, params)
@@ -1163,10 +1213,11 @@ async def _send_booking_confirmation(booking: dict) -> None:
     pt_ref = f"PT-{booking['id'][:8].upper()}"
     params: Dict = {
         "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
-        "reply_to": _ADMIN_NOTIFY_EMAIL,
+        "reply_to": [_REPLY_TO_EMAIL],
         "to":       [booking["passenger_email"]],
         "subject":  f"Booking Confirmation – {pt_ref} | Planet Transfers",
         "html":     _build_confirmation_html(booking),
+        "headers":  {"Reply-To": _REPLY_TO_EMAIL},
     }
 
     try:
@@ -1706,7 +1757,8 @@ async def _send_talixo_admin_notification(booking: dict) -> None:
 
         resend.Emails.send({
             "from":     sender,
-            "reply_to": admin_email,
+            "reply_to": ["GBRoyaltransfers@gmail.com"],
+            "headers":  {"Reply-To": "GBRoyaltransfers@gmail.com"},
             "to":       [admin_email],
             "subject":  f"[Talixo] New Booking Request — {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
             "html":     html,
