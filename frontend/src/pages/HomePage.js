@@ -198,15 +198,17 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <a
               href="/fixed-prices"
-              className="text-sm font-semibold text-slate-900 border border-slate-300 hover:border-[#d4af37] hover:text-[#d4af37] transition-colors px-4 py-2.5 rounded-lg"
+              className="hidden md:inline-flex text-sm font-semibold text-slate-900 border border-slate-300 hover:border-[#d4af37] hover:text-[#d4af37] transition-colors px-4 py-2.5 rounded-lg"
               data-testid="fixed-prices-nav-link"
             >
               Fixed Transfer Prices
             </a>
-            <CurrencySelector />
+            <div className="hidden sm:block">
+              <CurrencySelector />
+            </div>
             <a 
               href="/book"
-              className="btn-gold py-3 px-6 flex items-center gap-2 text-sm"
+              className="btn-gold py-2.5 px-4 sm:px-6 flex items-center gap-2 text-sm"
               data-testid="book-now-btn"
             >
               Book Now
@@ -219,7 +221,7 @@ export default function HomePage() {
                 const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
                 window.open(`/quote${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
               }}
-              className="btn-secondary py-3 px-6 flex items-center gap-2 text-sm"
+              className="hidden sm:flex btn-secondary py-2.5 px-4 sm:px-6 items-center gap-2 text-sm"
               data-testid="request-quote-btn"
             >
               Request Quote

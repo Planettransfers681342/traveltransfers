@@ -316,7 +316,20 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - iWay user ID: 143708
 - iWay API base: https://ng-api.iwayex.com
 
-## Backlog / Future Features (P1/P2)
+### Pre-Launch Cleanup (Feb 2026)
+- [x] Removed fake testimonials (Sarah Johnson, Michael Torres, Emma Williams, David Chen) from HomePage.js
+- [x] Removed fake "Rated 4.8/5 by customers" star rating badge from hero section
+- [x] Replaced all `customer-assets.emergentagent.com` image URLs with stable Unsplash/Pexels sources in HomePage.js and BookingPage.js
+- [x] Fixed mobile nav overflow — "Book Now" only button visible at 375px; "Request Quote", "Fixed Prices", CurrencySelector hidden at mobile breakpoints
+- [x] Talixo and MyTransfers remain DISABLED (feature flags off) for launch
+- [x] Full E2E smoke test passed (95%): search → results (10 iWay vehicles) → passenger details → admin dashboard
+
+### Upcoming — P0 (Deployment)
+- [ ] Deploy app via Emergent platform
+- [ ] Connect planettransfers.online custom domain
+- [ ] Configure DNS at registrar (A record + CNAME www)
+- [ ] Verify SSL auto-provisioned
+- [ ] Post-deploy E2E test: Search → Results → Passenger Details → Payment → Success Page → Customer Email → Admin Dashboard
 
 ### P1 - High Priority
 - [ ] Fix WhatsApp number (user to provide correct number - currently +44 773 947 6432)
