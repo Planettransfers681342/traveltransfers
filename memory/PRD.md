@@ -316,7 +316,15 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - iWay user ID: 143708
 - iWay API base: https://ng-api.iwayex.com
 
-### Pre-Launch Cleanup (Feb 2026)
+### Vehicle Class & UX Corrections (Feb 2026)
+- [x] Vehicle labels updated: Standard / Executive / Minivan MPV / Minibus (replacing Standard Class / Business Class / Group Transfer / Full Size Bus)
+- [x] Descriptions updated with realistic vehicle examples: "Toyota Prius, VW Passat or similar vehicle", "Mercedes E-Class, BMW 5 Series or similar vehicle", etc.
+- [x] Fleet images replaced with realistic everyday vehicles (not overly luxurious sedans)
+- [x] "Fixed Transfer Prices" removed from homepage nav (was distracting from core booking CTA)
+- [x] "Request Quote" button now gold-outlined, always visible on desktop/mobile — no longer hidden at mobile
+- [x] "Request a custom quote →" secondary CTA added below booking form search button
+- [x] "Trusted by thousands" tagline replaced with factual "Reliable, professional airport transfers worldwide"
+- [x] Test: 100% pass on all 10 frontend test cases (iteration_6.json)
 - [x] Removed fake testimonials (Sarah Johnson, Michael Torres, Emma Williams, David Chen) from HomePage.js
 - [x] Removed fake "Rated 4.8/5 by customers" star rating badge from hero section
 - [x] Replaced all `customer-assets.emergentagent.com` image URLs with stable Unsplash/Pexels sources in HomePage.js and BookingPage.js
