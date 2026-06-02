@@ -23,11 +23,12 @@ import { PhoneInput } from '@/components/PhoneInput';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Fleet Images — stable Unsplash sources
 const FLEET_IMAGES = {
-  economy: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/zjojrhht_image.png",
-  business: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/fio8po2v_image.png",
-  group: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/q24v6sx4_image.png",
-  bus: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/nie3ba6i_image.png"
+  economy: "https://images.unsplash.com/photo-1609703048009-d3576872b32c?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  business: "https://images.unsplash.com/photo-1592309905620-e5b59f6dcb98?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  group: "https://images.unsplash.com/photo-1655457353393-04bb8d53b996?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  bus: "https://images.pexels.com/photos/18029613/pexels-photo-18029613.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
 };
 
 const VEHICLES = [

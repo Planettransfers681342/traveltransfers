@@ -11,11 +11,9 @@ import {
   CheckCircle,
   Phone,
   Airplane,
-  Star,
   WhatsappLogo,
   CaretDown,
   Envelope,
-  AirplaneTakeoff,
   AirplaneLanding,
   Warning,
   ShieldCheck,
@@ -40,12 +38,12 @@ import { trackEvent } from '../utils/analytics';
 // Hero Images
 const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/bdf6f771-1f03-411b-9d3c-236b42d26b33/images/cc81389a63562a8e56aeb8add76427b4e10b593ddd3d0c4cf0206c0bf4098405.png";
 
-// Fleet Images
+// Fleet Images — stable Unsplash sources
 const FLEET_IMAGES = {
-  economy: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/zjojrhht_image.png",
-  business: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/fio8po2v_image.png",
-  group: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/q24v6sx4_image.png",
-  bus: "https://customer-assets.emergentagent.com/job_continue-chat-14/artifacts/nie3ba6i_image.png"
+  economy: "https://images.unsplash.com/photo-1609703048009-d3576872b32c?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  business: "https://images.unsplash.com/photo-1592309905620-e5b59f6dcb98?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  group: "https://images.unsplash.com/photo-1655457353393-04bb8d53b996?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  bus: "https://images.pexels.com/photos/18029613/pexels-photo-18029613.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
 };
 
 // Location Images
@@ -174,13 +172,6 @@ export default function HomePage() {
     { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, image: FLEET_IMAGES.bus, alt: "Large coach for airport group transfers" },
   ];
 
-  const testimonials = [
-    { text: "Exceptional service! Driver was punctual and very professional. The car was spotless and comfortable.", author: "Sarah Johnson", route: "London Heathrow to City Center" },
-    { text: "Best transfer service I've used. Booking was easy and the driver tracked my flight delay.", author: "Michael Torres", route: "Madrid Airport Transfer" },
-    { text: "Professional, reliable, and great value. The driver helped with luggage and knew the best routes.", author: "Emma Williams", route: "Seychelles Island Transfer" },
-    { text: "Smooth booking process and excellent communication. Will definitely use again for my business trips.", author: "David Chen", route: "Business Class Service" },
-  ];
-
   const locations = [
     { name: "London", airports: "Heathrow, Gatwick, Stansted", desc: "Premium transfers across all London airports", image: LOCATION_IMAGES.london },
     { name: "Madrid", airports: "Madrid-Barajas Airport", desc: "Reliable service throughout Madrid region", image: LOCATION_IMAGES.madrid },
@@ -248,16 +239,6 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Hero Text */}
             <div className="text-white fade-in">
-              {/* Trust Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
-                <div className="flex items-center">
-                  {[1,2,3,4,5].map((_, i) => (
-                    <Star key={i} size={14} weight="fill" className={i < 5 ? "text-yellow-400" : "text-white/30"} />
-                  ))}
-                </div>
-                <span className="text-sm font-medium">Rated 4.8/5 by customers</span>
-              </div>
-              
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-['Playfair_Display'] font-semibold leading-tight mb-6">
                 Premium Airport Transfers Worldwide
               </h1>
@@ -558,32 +539,6 @@ export default function HomePage() {
               <p className="font-medium">Fast & Reliable Service</p>
               <p className="text-sm text-slate-400 mt-1">On-time guarantee</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 mb-4">What Our Clients Say</h2>
-            <p className="text-lg text-slate-600">Trusted by thousands of satisfied customers</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {testimonials.map((testimonial, idx) => (
-              <div key={idx} className="testimonial-card fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-                <div className="flex mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} weight="fill" className="text-[#d4af37]" />
-                  ))}
-                </div>
-                <p className="text-slate-700 mb-4 relative z-10">"{testimonial.text}"</p>
-                <div className="mt-auto">
-                  <p className="font-semibold text-slate-900">{testimonial.author}</p>
-                  <p className="text-sm text-slate-500">{testimonial.route}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
