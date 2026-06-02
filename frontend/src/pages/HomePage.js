@@ -38,12 +38,12 @@ import { trackEvent } from '../utils/analytics';
 // Hero Images
 const HERO_IMAGE = "https://static.prod-images.emergentagent.com/jobs/bdf6f771-1f03-411b-9d3c-236b42d26b33/images/cc81389a63562a8e56aeb8add76427b4e10b593ddd3d0c4cf0206c0bf4098405.png";
 
-// Fleet Images — stable Unsplash sources
+// Fleet Images — stable production sources
 const FLEET_IMAGES = {
-  economy: "https://images.unsplash.com/photo-1609703048009-d3576872b32c?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
-  business: "https://images.unsplash.com/photo-1592309905620-e5b59f6dcb98?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
-  group: "https://images.unsplash.com/photo-1655457353393-04bb8d53b996?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
-  bus: "https://images.pexels.com/photos/18029613/pexels-photo-18029613.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+  standard:  "https://images.pexels.com/photos/6191762/pexels-photo-6191762.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  executive: "https://images.unsplash.com/photo-1592222269733-1d44ea5ab43b?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  minivan:   "https://images.pexels.com/photos/17455625/pexels-photo-17455625.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  minibus:   "https://images.pexels.com/photos/19871521/pexels-photo-19871521.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
 };
 
 // Location Images
@@ -166,10 +166,10 @@ export default function HomePage() {
   ];
 
   const fleet = [
-    { id: "economy", name: "Standard Class", desc: "Perfect for couples or small families", passengers: 4, luggage: 3, image: FLEET_IMAGES.economy, alt: "Standard airport transfer vehicle sedan" },
-    { id: "business", name: "Business Class", desc: "Luxury vehicles for business travelers", passengers: 4, luggage: 4, image: FLEET_IMAGES.business, alt: "Business class airport transfer sedan" },
-    { id: "group", name: "Group Transfer", desc: "Spacious vans for larger groups", passengers: 8, luggage: 8, image: FLEET_IMAGES.group, alt: "Airport transfer minivan for groups" },
-    { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, image: FLEET_IMAGES.bus, alt: "Large coach for airport group transfers" },
+    { id: "standard",  name: "Standard",       desc: "Reliable everyday saloons for comfortable transfers",     passengers: 3,  luggage: 2,  image: FLEET_IMAGES.standard,  alt: "Standard airport transfer — Toyota Prius or similar" },
+    { id: "executive", name: "Executive",       desc: "Premium business saloons for a professional journey",     passengers: 4,  luggage: 3,  image: FLEET_IMAGES.executive, alt: "Executive airport transfer — Mercedes E-Class or similar" },
+    { id: "minivan",   name: "Minivan / MPV",   desc: "Spacious people carriers perfect for families with luggage", passengers: 7, luggage: 5, image: FLEET_IMAGES.minivan,   alt: "Minivan airport transfer — Mercedes Vito or similar" },
+    { id: "minibus",   name: "Minibus",         desc: "Comfortable minibuses for larger groups and events",      passengers: 16, luggage: 16, image: FLEET_IMAGES.minibus,   alt: "Minibus airport transfer — Mercedes Sprinter or similar" },
   ];
 
   const locations = [
@@ -196,19 +196,12 @@ export default function HomePage() {
             <span className="font-['Playfair_Display'] text-xl font-semibold text-slate-900">Planet Transfers</span>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="/fixed-prices"
-              className="hidden md:inline-flex text-sm font-semibold text-slate-900 border border-slate-300 hover:border-[#d4af37] hover:text-[#d4af37] transition-colors px-4 py-2.5 rounded-lg"
-              data-testid="fixed-prices-nav-link"
-            >
-              Fixed Transfer Prices
-            </a>
             <div className="hidden sm:block">
               <CurrencySelector />
             </div>
             <a 
               href="/book"
-              className="btn-gold py-2.5 px-4 sm:px-6 flex items-center gap-2 text-sm"
+              className="btn-gold py-2.5 px-4 sm:px-5 flex items-center gap-2 text-sm"
               data-testid="book-now-btn"
             >
               Book Now
@@ -221,7 +214,7 @@ export default function HomePage() {
                 const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
                 window.open(`/quote${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
               }}
-              className="hidden sm:flex btn-secondary py-2.5 px-4 sm:px-6 items-center gap-2 text-sm"
+              className="flex items-center gap-2 text-sm font-semibold text-[#d4af37] border-2 border-[#d4af37] hover:bg-[#d4af37] hover:text-white transition-all px-4 sm:px-5 py-2.5 rounded-lg"
               data-testid="request-quote-btn"
             >
               Request Quote
@@ -436,6 +429,25 @@ export default function HomePage() {
                   Search Available Vehicles
                   <ArrowRight size={20} />
                 </button>
+
+                {/* Request Quote secondary CTA */}
+                <div className="text-center pt-1">
+                  <p className="text-xs text-slate-400 mb-1.5">Can't find your route, or need a custom price?</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const params = {};
+                      if (formData.pickup_location)  params.from = formData.pickup_location;
+                      if (formData.dropoff_location) params.to   = formData.dropoff_location;
+                      const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
+                      window.open(`/quote${qs}`, '_blank', 'width=800,height=900,scrollbars=yes');
+                    }}
+                    className="text-sm font-semibold text-[#d4af37] hover:underline"
+                    data-testid="quote-cta-below-form"
+                  >
+                    Request a custom quote →
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -481,8 +493,14 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-slate-900 mb-2">{vehicle.name}</h3>
-                  <p className="text-slate-600 text-sm mb-4">{vehicle.desc}</p>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-1">{vehicle.name}</h3>
+                  <p className="text-slate-600 text-sm mb-3">{vehicle.desc}</p>
+                  <p className="text-xs text-slate-400 italic mb-4">
+                    {vehicle.id === 'standard'  && 'Toyota Prius, VW Passat or similar vehicle'}
+                    {vehicle.id === 'executive' && 'Mercedes E-Class, BMW 5 Series or similar vehicle'}
+                    {vehicle.id === 'minivan'   && 'Mercedes Vito, VW Transporter or similar vehicle'}
+                    {vehicle.id === 'minibus'   && 'Mercedes Sprinter, Ford Transit or similar vehicle'}
+                  </p>
                   <div className="flex items-center gap-4 text-sm text-slate-500">
                     <span className="flex items-center gap-1">
                       <Users size={16} /> Up to {vehicle.passengers}
@@ -503,7 +521,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-semibold mb-4">Why Travellers Choose Us</h2>
-            <p className="text-slate-400">Trusted by thousands of international travellers</p>
+            <p className="text-slate-400">Reliable, professional airport transfers worldwide</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             <div className="text-center">

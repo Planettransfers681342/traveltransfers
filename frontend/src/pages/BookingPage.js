@@ -23,19 +23,19 @@ import { PhoneInput } from '@/components/PhoneInput';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Fleet Images — stable Unsplash sources
+// Fleet Images — stable production sources
 const FLEET_IMAGES = {
-  economy: "https://images.unsplash.com/photo-1609703048009-d3576872b32c?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
-  business: "https://images.unsplash.com/photo-1592309905620-e5b59f6dcb98?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
-  group: "https://images.unsplash.com/photo-1655457353393-04bb8d53b996?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
-  bus: "https://images.pexels.com/photos/18029613/pexels-photo-18029613.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+  standard:  "https://images.pexels.com/photos/6191762/pexels-photo-6191762.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  executive: "https://images.unsplash.com/photo-1592222269733-1d44ea5ab43b?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85",
+  minivan:   "https://images.pexels.com/photos/17455625/pexels-photo-17455625.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  minibus:   "https://images.pexels.com/photos/19871521/pexels-photo-19871521.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
 };
 
 const VEHICLES = [
-  { id: "economy", name: "Standard Class", desc: "Comfortable sedans with A/C", passengers: 4, luggage: 3, features: ["Air conditioning", "Comfortable sedans", "Professional driver"] },
-  { id: "business", name: "Business Class", desc: "Premium sedans with Wi-Fi", passengers: 4, luggage: 4, features: ["Wi-Fi available", "Premium sedans", "Complimentary water"] },
-  { id: "group", name: "Group Transfer", desc: "Minivans & Minibuses", passengers: 8, luggage: 8, features: ["Extra space", "Minivans available", "Group friendly"] },
-  { id: "bus", name: "Full Size Bus", desc: "Coach buses for large groups", passengers: 50, luggage: 50, features: ["Climate control", "Comfortable seating", "Large capacity"] },
+  { id: "standard",  name: "Standard",     desc: "Toyota Prius, VW Passat or similar vehicle",       passengers: 3,  luggage: 2,  features: ["Air conditioning", "Comfortable saloon", "Professional driver"] },
+  { id: "executive", name: "Executive",    desc: "Mercedes E-Class, BMW 5 Series or similar vehicle", passengers: 4,  luggage: 3,  features: ["Premium vehicle", "Climate control", "Complimentary water"] },
+  { id: "minivan",   name: "Minivan / MPV",desc: "Mercedes Vito, VW Transporter or similar vehicle",  passengers: 7,  luggage: 5,  features: ["Extra luggage space", "People carrier", "Group friendly"] },
+  { id: "minibus",   name: "Minibus",      desc: "Mercedes Sprinter, Ford Transit or similar vehicle", passengers: 16, luggage: 16, features: ["Climate control", "Comfortable seating", "Large group capacity"] },
 ];
 
 export default function BookingPage() {
