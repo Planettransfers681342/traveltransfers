@@ -791,13 +791,14 @@ async def get_admin_stats():
 # ==================== QUOTES ====================
 
 @api_router.post("/quotes")
-async def create_quote(quote: QuoteRequestCreate):
-    """Create a new quote request"""
+async def create_quote(quote: QuoteRequestCreate, background_tasks: BackgroundTasks):
+    """Create a new quote request and send email notifications."""
     quote_obj = QuoteRequest(**quote.model_dump())
     doc = quote_obj.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     
     await db.quotes.insert_one(doc)
+    background_tasks.add_task(_send_quote_emails, doc)
     return quote_obj
 
 @api_router.get("/quotes")
@@ -1238,6 +1239,122 @@ async def _send_booking_confirmation(booking: dict) -> None:
             {"$set": {"email_sent": False, "email_error": str(exc)}}
         )
         logger.error(f"Failed to send confirmation email for {pt_ref}: {exc}")
+
+
+# ── Quote emails ─────────────────────────────────────────────────────────────
+
+def _build_quote_admin_html(quote: dict) -> str:
+    qid = quote.get('id', '')[:8].upper()
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
+    <p style="margin:4px 0 0;color:#fff;font-size:13px;">New Quote Request — QT-{qid}</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#111;font-weight:bold;margin:0 0 16px;">A new quote request has been submitted.</p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;width:38%;font-weight:bold;border-bottom:1px solid #e5e7eb;">Customer</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passenger_name','')}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Email</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passenger_email','')}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Phone</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passenger_phone','')}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">From</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('pickup_location','')}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">To</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('dropoff_location','')}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Date</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{_format_email_date(quote.get('pickup_date',''))} at {quote.get('pickup_time','')}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Trip Type</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('trip_type','one-way').replace('-',' ').title()}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Passengers</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passengers','')} passengers, {quote.get('luggage','')} bags</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Vehicle Preference</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('vehicle_preference','Not specified')}</td></tr>
+      {'<tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Special Requests</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">' + quote.get('special_requests','') + '</td></tr>' if quote.get('special_requests') else ''}
+    </table>
+    <p style="margin:20px 0 0;font-size:13px;color:#6b7280;">Reply directly to this email to respond to the customer.</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>"""
+
+
+def _build_quote_customer_html(quote: dict) -> str:
+    qid = quote.get('id', '')[:8].upper()
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
+    <p style="margin:4px 0 0;color:#fff;font-size:13px;">Quote Request Received</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#111;margin:0 0 8px;">Dear {quote.get('passenger_name','').split()[0] if quote.get('passenger_name') else 'there'},</p>
+    <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 20px;">
+      Thank you for your quote request. We have received your details and our team will review your route and get back to you with a price within <strong>a few hours</strong>.
+    </p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:0 0 20px;">
+      <p style="margin:0 0 10px;font-size:12px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Your Transfer Summary</p>
+      <table width="100%" cellpadding="4" cellspacing="0">
+        <tr><td style="font-size:12px;color:#6b7280;width:40%;">From</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('pickup_location','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">To</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('dropoff_location','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Date</td><td style="font-size:13px;color:#111;font-weight:600;">{_format_email_date(quote.get('pickup_date',''))} at {quote.get('pickup_time','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Passengers</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('passengers','')} passengers</td></tr>
+        {'<tr><td style="font-size:12px;color:#6b7280;">Vehicle</td><td style="font-size:13px;color:#111;font-weight:600;">' + quote.get('vehicle_preference','') + '</td></tr>' if quote.get('vehicle_preference') else ''}
+      </table>
+    </div>
+    <p style="font-size:13px;color:#374151;line-height:1.6;margin:0 0 6px;">
+      Your reference number is <strong>QT-{qid}</strong>. Please quote this if you contact us.
+    </p>
+    <p style="font-size:13px;color:#374151;line-height:1.6;margin:0;">
+      If you have any questions, you can reach us on WhatsApp at <strong>+44 773 947 6432</strong> or reply to this email.
+    </p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online · This is an automated confirmation — replies go to our team.</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>"""
+
+
+async def _send_quote_emails(quote: dict) -> None:
+    """Send admin notification + customer acknowledgement when a new quote is submitted."""
+    if not resend.api_key:
+        logger.warning("RESEND_API_KEY not set — skipping quote emails")
+        return
+
+    qid = f"QT-{quote.get('id','')[:8].upper()}"
+    customer_email = quote.get('passenger_email', '')
+
+    # Admin notification
+    try:
+        await asyncio.to_thread(resend.Emails.send, {
+            "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+            "reply_to": [customer_email] if customer_email else [_REPLY_TO_EMAIL],
+            "to":       [_ADMIN_NOTIFY_EMAIL],
+            "subject":  f"New Quote Request {qid} – {quote.get('passenger_name','')} | {quote.get('pickup_location','')} → {quote.get('dropoff_location','')}",
+            "html":     _build_quote_admin_html(quote),
+            "headers":  {"Reply-To": customer_email or _REPLY_TO_EMAIL},
+        })
+        logger.info(f"Admin quote notification sent for {qid}")
+    except Exception as exc:
+        logger.error(f"Admin quote notification failed for {qid}: {exc}")
+
+    # Customer acknowledgement
+    if customer_email:
+        try:
+            await asyncio.to_thread(resend.Emails.send, {
+                "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+                "reply_to": [_REPLY_TO_EMAIL],
+                "to":       [customer_email],
+                "subject":  f"Quote Request Received – {qid} | Planet Transfers",
+                "html":     _build_quote_customer_html(quote),
+                "headers":  {"Reply-To": _REPLY_TO_EMAIL},
+            })
+            logger.info(f"Customer quote acknowledgement sent to {customer_email} for {qid}")
+        except Exception as exc:
+            logger.error(f"Customer quote acknowledgement failed for {qid}: {exc}")
+
 
 @api_router.get("/iway/search")
 async def iway_search(pickup: str, dropoff: str, currency: str = "GBP", lang: str = "en"):
