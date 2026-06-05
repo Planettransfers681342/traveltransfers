@@ -279,30 +279,35 @@ export default function QuoteRequest() {
 
                 {/* Return Date/Time (if round-trip) */}
                 {formData.trip_type === 'round-trip' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Return Date *</label>
-                      <input
-                        type="date"
-                        name="return_date"
-                        value={formData.return_date}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                        min={formData.pickup_date || new Date().toISOString().split('T')[0]}
-                      />
+                  <div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Return Date *</label>
+                        <input
+                          type="date"
+                          name="return_date"
+                          value={formData.return_date}
+                          onChange={handleInputChange}
+                          className="input-field"
+                          required
+                          min={formData.pickup_date || new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Return Time *</label>
+                        <input
+                          type="time"
+                          name="return_time"
+                          value={formData.return_time}
+                          onChange={handleInputChange}
+                          className="input-field"
+                          required
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Return Time *</label>
-                      <input
-                        type="time"
-                        name="return_time"
-                        value={formData.return_time}
-                        onChange={handleInputChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Please include your return flight number and any special requirements in the notes below.
+                    </p>
                   </div>
                 )}
 

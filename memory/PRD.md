@@ -316,7 +316,21 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - iWay user ID: 143708
 - iWay API base: https://ng-api.iwayex.com
 
-### Vehicle Class & UX Corrections (Feb 2026)
+### Return Transfer Handling — Pre-Launch Decision (Jun 2026)
+- [x] One-way iWay booking flow kept unchanged (no risk to live bookings)
+- [x] Return transfers handled via Request Quote path
+- [x] Homepage booking form callout updated: "Need a return transfer or a custom route?" with explanation + quote CTA
+- [x] Quote form already had round-trip fields (trip_type, return_date, return_time) — confirmed working
+- [x] Added "include return flight number in notes" hint to round-trip section of quote form
+- [ ] Full paid return booking via iWay API — POST-LAUNCH (P1)
+
+### Launch Fixes (Jun 2026)
+- [x] Quote email fix: admin notification + customer acknowledgement emails (were never implemented)
+- [x] Admin stats 404 fixed: missing @api_router.get("/admin/stats") decorator restored
+- [x] Admin dashboard fetchData() made resilient: all requests now have .catch() guards
+- [x] booking_status auto-confirmed on payment_completed (was staying Pending after payment)
+- [x] All 5 production checks: PASS (quotes in DB, emails sent, admin dashboard live, stats live)
+- [x] Customer email test to georgimilev681@gmail.com: PASS
 - [x] Vehicle labels updated: Standard / Executive / Minivan MPV / Minibus (replacing Standard Class / Business Class / Group Transfer / Full Size Bus)
 - [x] Descriptions updated with realistic vehicle examples: "Toyota Prius, VW Passat or similar vehicle", "Mercedes E-Class, BMW 5 Series or similar vehicle", etc.
 - [x] Fleet images replaced with realistic everyday vehicles (not overly luxurious sedans)

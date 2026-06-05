@@ -430,9 +430,10 @@ export default function HomePage() {
                   <ArrowRight size={20} />
                 </button>
 
-                {/* Request Quote secondary CTA */}
-                <div className="text-center pt-1">
-                  <p className="text-xs text-slate-400 mb-1.5">Can't find your route, or need a custom price?</p>
+                {/* Return transfer / Quote secondary CTA */}
+                <div className="text-center pt-1 border-t border-slate-100">
+                  <p className="text-xs text-slate-500 mb-1.5 font-medium">Need a return transfer or a custom route?</p>
+                  <p className="text-xs text-slate-400 mb-2">Our one-way search covers most airport routes. For return trips, include your return date, time, and flight details in a quote request.</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -445,7 +446,7 @@ export default function HomePage() {
                     className="text-sm font-semibold text-[#d4af37] hover:underline"
                     data-testid="quote-cta-below-form"
                   >
-                    Request a custom quote →
+                    Request a return or custom quote →
                   </button>
                 </div>
               </form>
