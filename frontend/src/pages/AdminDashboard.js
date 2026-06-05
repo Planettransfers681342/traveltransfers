@@ -61,11 +61,11 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const [statsRes, bookingsRes, routesRes, quotesRes, iwayRes, talixoRes, mytransfersRes] = await Promise.all([
-        axios.get(`${API}/admin/stats`),
-        axios.get(`${API}/bookings`),
-        axios.get(`${API}/routes/prices`),
-        axios.get(`${API}/quotes`),
-        axios.get(`${API}/iway/bookings`),
+        axios.get(`${API}/admin/stats`).catch(() => ({ data: {} })),
+        axios.get(`${API}/bookings`).catch(() => ({ data: [] })),
+        axios.get(`${API}/routes/prices`).catch(() => ({ data: [] })),
+        axios.get(`${API}/quotes`).catch(() => ({ data: [] })),
+        axios.get(`${API}/iway/bookings`).catch(() => ({ data: [] })),
         axios.get(`${API}/talixo/bookings`).catch(() => ({ data: [] })),
         axios.get(`${API}/mytransfers/bookings`).catch(() => ({ data: [] })),
       ]);

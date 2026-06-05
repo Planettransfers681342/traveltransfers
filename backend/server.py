@@ -739,6 +739,8 @@ async def send_test_email(to_email: str = "GBRoyaltransfers@gmail.com"):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/stats")
 async def get_admin_stats():
     total_bookings = await db.bookings.count_documents({})
     pending_bookings = await db.bookings.count_documents({"booking_status": "pending"})
