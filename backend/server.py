@@ -1704,8 +1704,12 @@ async def update_iway_booking_status(
     if set_fields:
         await db.iway_bookings.update_one({"id": booking_id}, {"$set": set_fields})
 
-    # Send confirmation email + admin notification when payment is marked complete (only once)
+    # Auto-confirm booking when payment is completed
     if update.payment_status == "payment_completed":
+        await db.iway_bookings.update_one(
+            {"id": booking_id, "booking_status": "pending"},
+            {"$set": {"booking_status": "confirmed"}}
+        )
         booking = await db.iway_bookings.find_one({"id": booking_id}, {"_id": 0})
         if booking and booking.get("passenger_email") and not booking.get("email_sent"):
             background_tasks.add_task(_send_booking_confirmation, booking)

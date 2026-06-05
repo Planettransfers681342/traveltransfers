@@ -17,10 +17,10 @@
 - Status: DISABLED via `MYTRANSFERS_ENABLED=false`
 - Do not enable until production keys received
 
-## Resend (Email)
-- Sender: bookings@planettransfers.online
-- Reply-To: GBRoyaltransfers@gmail.com
-- Status: ACTIVE
+## Test Email Addresses
+- Admin/owner: GBRoyaltransfers@gmail.com
+- Customer test email (correct): georgimilev681@gmail.com
+- Note: milevgeoegi681@gmail.com was a typo on the Dinko test booking — do not use
 
 ## Stripe
 - Status: ACTIVE (test key via Emergent)
