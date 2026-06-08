@@ -21,7 +21,8 @@ import {
   Headset,
   Medal,
   Globe,
-  Lightning
+  Lightning,
+  Buildings
 } from '@phosphor-icons/react';
 import axios from 'axios';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
@@ -605,6 +606,29 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Partner CTA — small, below customer sections */}
+      <section className="py-12 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#1a1a2e] rounded-full flex items-center justify-center flex-shrink-0">
+              <Buildings size={22} className="text-[#d4af37]" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-900 text-base">Travel agency or hotel?</p>
+              <p className="text-sm text-slate-500">Partner with Planet Transfers — earn commission on every referred booking.</p>
+            </div>
+          </div>
+          <a
+            href="/partners"
+            className="flex-shrink-0 flex items-center gap-2 text-sm font-semibold text-[#1a1a2e] border-2 border-[#1a1a2e] hover:bg-[#1a1a2e] hover:text-white transition-all px-5 py-2.5 rounded-lg whitespace-nowrap"
+            data-testid="partner-cta-homepage"
+          >
+            Partner Programme
+            <ArrowRight size={16} />
+          </a>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="footer">
         <div className="max-w-7xl mx-auto px-6">
@@ -624,6 +648,7 @@ export default function HomePage() {
                 <li><a href="#fleet">Our Fleet</a></li>
                 <li><a href="#locations">Destinations</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="/partners" className="text-[#d4af37] hover:text-[#d4af37]/80">Partner Programme</a></li>
               </ul>
             </div>
             <div>

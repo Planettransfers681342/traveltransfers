@@ -845,6 +845,149 @@ async def delete_quote(quote_id: str):
         raise HTTPException(status_code=404, detail="Quote not found")
     return {"message": "Quote deleted"}
 
+
+# ==================== PARTNER REQUESTS ====================
+
+class PartnerRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_name: str
+    contact_name: str
+    email: str
+    phone: str
+    business_type: str
+    monthly_bookings: str
+    message: Optional[str] = None
+    status: str = "new"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PartnerRequestCreate(BaseModel):
+    company_name: str
+    contact_name: str
+    email: str
+    phone: str
+    business_type: str
+    monthly_bookings: str
+    message: Optional[str] = None
+
+
+def _build_partner_admin_html(p: dict) -> str:
+    pid = p.get('id', '')[:8].upper()
+    btype = p.get('business_type','').replace('_',' ').title()
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
+    <p style="margin:4px 0 0;color:#fff;font-size:13px;">New Partner Request — PR-{pid}</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#111;font-weight:bold;margin:0 0 16px;">A new partner enquiry has been submitted.</p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;width:38%;font-weight:bold;border-bottom:1px solid #e5e7eb;">Company</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{p.get('company_name','')}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Contact</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{p.get('contact_name','')}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Email</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{p.get('email','')}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Phone / WhatsApp</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{p.get('phone','')}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Business Type</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{btype}</td></tr>
+      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Est. Monthly Bookings</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{p.get('monthly_bookings','')}</td></tr>
+      {'<tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;">Message</td><td style="padding:8px 12px;font-size:13px;color:#111;">' + p.get('message','') + '</td></tr>' if p.get('message') else ''}
+    </table>
+    <p style="margin:20px 0 0;font-size:13px;color:#6b7280;">Reply directly to this email to respond to the partner.</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
+  </td></tr>
+</table></td></tr></table></body></html>"""
+
+
+def _build_partner_customer_html(p: dict) -> str:
+    pid = p.get('id', '')[:8].upper()
+    first = p.get('contact_name','').split()[0] if p.get('contact_name') else 'there'
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
+    <p style="margin:4px 0 0;color:#fff;font-size:13px;">Partner Enquiry Received — PR-{pid}</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#111;margin:0 0 8px;">Dear {first},</p>
+    <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 20px;">Thank you for your interest in partnering with Planet Transfers. We have received your enquiry and our team will be in touch within <strong>1 business day</strong> to discuss how we can work together.</p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:0 0 20px;">
+      <p style="margin:0 0 10px;font-size:12px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Your Enquiry Summary</p>
+      <table width="100%" cellpadding="4" cellspacing="0">
+        <tr><td style="font-size:12px;color:#6b7280;width:40%;">Company</td><td style="font-size:13px;color:#111;font-weight:600;">{p.get('company_name','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Reference</td><td style="font-size:13px;color:#111;font-weight:600;">PR-{pid}</td></tr>
+      </table>
+    </div>
+    <p style="font-size:13px;color:#374151;line-height:1.6;margin:0;">Questions? Reach us on WhatsApp at <strong>+44 773 947 6432</strong> or reply to this email.</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
+  </td></tr>
+</table></td></tr></table></body></html>"""
+
+
+async def _send_partner_emails(partner: dict) -> None:
+    if not resend.api_key:
+        return
+    pid = f"PR-{partner.get('id','')[:8].upper()}"
+    customer_email = partner.get('email','')
+    try:
+        await asyncio.to_thread(resend.Emails.send, {
+            "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+            "reply_to": [customer_email] if customer_email else [_REPLY_TO_EMAIL],
+            "to":       [_ADMIN_NOTIFY_EMAIL],
+            "subject":  f"New Partner Request {pid} — {partner.get('company_name','')} ({partner.get('business_type','').replace('_',' ').title()})",
+            "html":     _build_partner_admin_html(partner),
+            "headers":  {"Reply-To": customer_email or _REPLY_TO_EMAIL},
+        })
+        logger.info(f"Admin partner notification sent for {pid}")
+    except Exception as exc:
+        logger.error(f"Admin partner notification failed for {pid}: {exc}")
+    if customer_email:
+        try:
+            await asyncio.to_thread(resend.Emails.send, {
+                "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+                "reply_to": [_REPLY_TO_EMAIL],
+                "to":       [customer_email],
+                "subject":  f"Partner Enquiry Received — {pid} | Planet Transfers",
+                "html":     _build_partner_customer_html(partner),
+                "headers":  {"Reply-To": _REPLY_TO_EMAIL},
+            })
+            logger.info(f"Partner acknowledgement sent to {customer_email} for {pid}")
+        except Exception as exc:
+            logger.error(f"Partner acknowledgement failed for {pid}: {exc}")
+
+
+@api_router.post("/partners")
+async def create_partner_request(partner: PartnerRequestCreate, background_tasks: BackgroundTasks):
+    obj = PartnerRequest(**partner.model_dump())
+    doc = obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.partners.insert_one(doc)
+    background_tasks.add_task(_send_partner_emails, doc)
+    return obj
+
+
+@api_router.get("/partners")
+async def get_all_partners():
+    partners = await db.partners.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return partners
+
+
+@api_router.put("/partners/{partner_id}/status")
+async def update_partner_status(partner_id: str, update: dict):
+    await db.partners.update_one({"id": partner_id}, {"$set": {"status": update.get("status", "new")}})
+    return {"ok": True}
+
+
+@api_router.delete("/partners/{partner_id}")
+async def delete_partner(partner_id: str):
+    await db.partners.delete_one({"id": partner_id})
+    return {"ok": True}
+
+
 # ==================== SEED DATA ====================
 
 @api_router.post("/seed")

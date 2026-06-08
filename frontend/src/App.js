@@ -22,6 +22,7 @@ import CookiePolicy from "@/pages/CookiePolicy";
 import QuoteRequest from "@/pages/QuoteRequest";
 import AirportTransferPage from "@/pages/AirportTransferPage";
 import TransferRoutePage from "@/pages/TransferRoutePage";
+import PartnersPage from "@/pages/PartnersPage";
 
 // Fires page_view on every route change (consent-gated inside trackPageView)
 function AnalyticsTracker() {
@@ -47,6 +48,7 @@ function App() {
           <Route path="/passenger-details" element={<PassengerDetailsPage />} />
           <Route path="/quote" element={<QuoteRequest />} />
           <Route path="/fixed-prices" element={<FixedPricesPage />} />
+          <Route path="/partners" element={<PartnersPage />} />
           
           {/* SEO Destination Pages */}
           <Route path="/airport-transfer/:city" element={<AirportTransferPage />} />

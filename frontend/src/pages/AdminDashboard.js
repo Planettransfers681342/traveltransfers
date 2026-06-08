@@ -14,7 +14,9 @@ import {
   CaretDown,
   MagnifyingGlass,
   ChatCircleText,
-  Eye
+  Eye,
+  Handshake,
+  Buildings
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -46,6 +48,7 @@ export default function AdminDashboard() {
     bus_price: ''
   });
   const [quotes, setQuotes] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [quotesSearchTerm, setQuotesSearchTerm] = useState('');
 
   useEffect(() => {
@@ -60,11 +63,12 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, bookingsRes, routesRes, quotesRes, iwayRes, talixoRes, mytransfersRes] = await Promise.all([
+      const [statsRes, bookingsRes, routesRes, quotesRes, partnersRes, iwayRes, talixoRes, mytransfersRes] = await Promise.all([
         axios.get(`${API}/admin/stats`).catch(() => ({ data: {} })),
         axios.get(`${API}/bookings`).catch(() => ({ data: [] })),
         axios.get(`${API}/routes/prices`).catch(() => ({ data: [] })),
         axios.get(`${API}/quotes`).catch(() => ({ data: [] })),
+        axios.get(`${API}/partners`).catch(() => ({ data: [] })),
         axios.get(`${API}/iway/bookings`).catch(() => ({ data: [] })),
         axios.get(`${API}/talixo/bookings`).catch(() => ({ data: [] })),
         axios.get(`${API}/mytransfers/bookings`).catch(() => ({ data: [] })),
@@ -73,6 +77,7 @@ export default function AdminDashboard() {
       setBookings(bookingsRes.data);
       setRoutes(routesRes.data);
       setQuotes(quotesRes.data);
+      setPartners(partnersRes.data);
       setIwayBookings(iwayRes.data);
       setTalixoBookings(talixoRes.data);
       setMyTransfersBookings(mytransfersRes.data);
@@ -289,6 +294,19 @@ export default function AdminDashboard() {
             {quotes.filter(q => q.status === 'new').length > 0 && (
               <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
                 {quotes.filter(q => q.status === 'new').length}
+              </span>
+            )}
+          </div>
+          <div
+            onClick={() => setActiveTab('partners')}
+            className={`admin-nav-item ${activeTab === 'partners' ? 'active' : ''}`}
+            data-testid="nav-partners"
+          >
+            <Handshake size={20} />
+            <span>Partner Requests</span>
+            {partners.filter(p => p.status === 'new').length > 0 && (
+              <span className="ml-auto bg-[#d4af37] text-white text-xs px-2 py-0.5 rounded-full">
+                {partners.filter(p => p.status === 'new').length}
               </span>
             )}
           </div>
@@ -746,6 +764,73 @@ export default function AdminDashboard() {
                             </button>
                           </div>
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Partners Tab */}
+        {activeTab === 'partners' && (
+          <div className="admin-card" data-testid="partners-section">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Partner Requests</h2>
+                <p className="text-sm text-slate-500 mt-1">{partners.length} total · {partners.filter(p=>p.status==='new').length} new</p>
+              </div>
+              <a href="/partners" target="_blank" rel="noopener noreferrer" className="btn-gold py-2 px-4 text-sm flex items-center gap-2">
+                <Buildings size={16} /> View Partner Page
+              </a>
+            </div>
+            {partners.length === 0 ? (
+              <div className="text-center py-16 text-slate-400">
+                <Handshake size={40} className="mx-auto mb-3 opacity-40" />
+                <p>No partner requests yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-left text-slate-500 text-xs uppercase tracking-wide">
+                      <th className="pb-3 pr-4">Company</th>
+                      <th className="pb-3 pr-4">Contact</th>
+                      <th className="pb-3 pr-4">Type</th>
+                      <th className="pb-3 pr-4">Monthly</th>
+                      <th className="pb-3 pr-4">Email / Phone</th>
+                      <th className="pb-3 pr-4">Status</th>
+                      <th className="pb-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {partners.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 pr-4 font-medium text-slate-900">{p.company_name}</td>
+                        <td className="py-3 pr-4 text-slate-700">{p.contact_name}</td>
+                        <td className="py-3 pr-4 text-slate-600 capitalize">{p.business_type?.replace(/_/g,' ')}</td>
+                        <td className="py-3 pr-4 text-slate-600">{p.monthly_bookings}</td>
+                        <td className="py-3 pr-4">
+                          <div className="text-slate-700">{p.email}</div>
+                          <div className="text-slate-400 text-xs">{p.phone}</div>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <select
+                            value={p.status}
+                            onChange={async (e) => {
+                              await axios.put(`${API}/partners/${p.id}/status`, { status: e.target.value });
+                              setPartners(prev => prev.map(x => x.id===p.id ? {...x, status: e.target.value} : x));
+                            }}
+                            className={`text-xs px-2 py-1 rounded-full border font-medium ${p.status==='new' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : p.status==='contacted' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-green-50 border-green-200 text-green-700'}`}
+                          >
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="active">Active Partner</option>
+                            <option value="declined">Declined</option>
+                          </select>
+                        </td>
+                        <td className="py-3 text-slate-400 text-xs">{new Date(p.created_at).toLocaleDateString('en-GB')}</td>
                       </tr>
                     ))}
                   </tbody>

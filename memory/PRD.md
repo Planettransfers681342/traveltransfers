@@ -316,6 +316,15 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - iWay user ID: 143708
 - iWay API base: https://ng-api.iwayex.com
 
+### Partner Programme Launch (Jun 2026)
+- [x] /partners page — full B2B landing page with benefits, how it works, and partner enquiry form
+- [x] Backend: POST /api/partners, GET /api/partners, PUT /partners/{id}/status, DELETE
+- [x] Partner emails: admin notification + partner acknowledgement (both tested)
+- [x] Admin dashboard: Partner Requests tab with status management (New/Contacted/Active/Declined)
+- [x] Homepage: Partner CTA section below fleet ("Travel agency or hotel? Partner with Planet Transfers")
+- [x] Footer: Partner Programme link added to Quick Links
+- [x] Return transfer callout on homepage booking form updated to mention quote path clearly
+
 ### Return Transfer Handling — Pre-Launch Decision (Jun 2026)
 - [x] One-way iWay booking flow kept unchanged (no risk to live bookings)
 - [x] Return transfers handled via Request Quote path
