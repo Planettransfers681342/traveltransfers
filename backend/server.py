@@ -988,6 +988,290 @@ async def delete_partner(partner_id: str):
     return {"ok": True}
 
 
+# ==================== MANUAL BOOKINGS + UNIFIED BOOKINGS ====================
+
+class ManualBookingCreate(BaseModel):
+    passenger_name: str
+    passenger_email: Optional[str] = None
+    passenger_phone: Optional[str] = None
+    flight_number: Optional[str] = None
+    pickup_location: str
+    dropoff_location: str
+    pickup_date: str
+    pickup_time: str
+    vehicle_type: str = "Standard"
+    passengers: int = 1
+    luggage: int = 0
+    customer_price: float
+    currency: str = "GBP"
+    payment_status: str = "unpaid"
+    booking_status: str = "confirmed"
+    internal_notes: Optional[str] = None
+    greeting_sign: Optional[str] = None
+
+class ManualBooking(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    source: str = "manual"
+    passenger_name: str
+    passenger_email: Optional[str] = None
+    passenger_phone: Optional[str] = None
+    flight_number: Optional[str] = None
+    pickup_location: str
+    dropoff_location: str
+    pickup_date: str
+    pickup_time: str
+    vehicle_type: str = "Standard"
+    passengers: int = 1
+    luggage: int = 0
+    customer_price: float
+    currency: str = "GBP"
+    payment_status: str = "unpaid"
+    booking_status: str = "confirmed"
+    fulfillment_status: str = "pending"
+    supplier_name: Optional[str] = None
+    supplier_reference: Optional[str] = None
+    supplier_cost: Optional[float] = None
+    internal_notes: Optional[str] = None
+    greeting_sign: Optional[str] = None
+    voucher_sent: bool = False
+    email_sent: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@api_router.post("/manual-bookings")
+async def create_manual_booking(booking: ManualBookingCreate, background_tasks: BackgroundTasks):
+    obj = ManualBooking(**booking.model_dump())
+    doc = obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.manual_bookings.insert_one(doc)
+    if obj.passenger_email:
+        background_tasks.add_task(_send_manual_booking_confirmation, doc)
+    return obj
+
+
+@api_router.get("/manual-bookings")
+async def get_manual_bookings():
+    bookings = await db.manual_bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return bookings
+
+
+@api_router.get("/all-bookings")
+async def get_all_bookings():
+    iway_raw = await db.iway_bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    manual_raw = await db.manual_bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    for b in iway_raw:
+        b["source"] = "iway"
+        if "passenger_price" not in b:
+            b["customer_price"] = b.get("price", 0)
+        else:
+            b["customer_price"] = b.get("passenger_price", 0)
+        if "fulfillment_status" not in b:
+            b["fulfillment_status"] = "pending"
+    for b in manual_raw:
+        b["source"] = "manual"
+    combined = iway_raw + manual_raw
+    combined.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return combined
+
+
+@api_router.put("/bookings/{booking_id}/supplier")
+async def update_booking_supplier(booking_id: str, payload: dict):
+    allowed = {"supplier_name","supplier_reference","supplier_cost",
+               "fulfillment_status","internal_notes","booking_status","payment_status"}
+    fields = {k: v for k, v in payload.items() if k in allowed}
+    if not fields:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    result = await db.manual_bookings.update_one({"id": booking_id}, {"$set": fields})
+    if result.matched_count == 0:
+        await db.iway_bookings.update_one({"id": booking_id}, {"$set": fields})
+    return {"ok": True}
+
+
+@api_router.post("/bookings/{booking_id}/send-voucher")
+async def send_voucher(booking_id: str, background_tasks: BackgroundTasks):
+    booking = await db.manual_bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        booking = await db.iway_bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    background_tasks.add_task(_generate_and_send_voucher, booking)
+    return {"ok": True}
+
+
+def _generate_voucher_pdf(booking: dict) -> bytes:
+    from fpdf import FPDF
+    ref = booking.get("internal_booking_id") or f"PT-{booking.get('id','')[:8].upper()}"
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=False)
+
+    # ── Header bar ──────────────────────────────────────────────────────────
+    pdf.set_fill_color(26, 26, 46)
+    pdf.rect(0, 0, 210, 38, 'F')
+    pdf.set_xy(12, 8)
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 10, "Planet Transfers", ln=True)
+    pdf.set_xy(12, 21)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(200, 200, 200)
+    pdf.cell(0, 6, "Booking Confirmation Voucher", ln=True)
+    pdf.set_xy(150, 12)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 6, ref, ln=True)
+
+    pdf.set_text_color(30, 30, 30)
+    y = 48
+
+    def section(title: str):
+        nonlocal y
+        pdf.set_fill_color(245, 245, 242)
+        pdf.rect(10, y, 190, 8, 'F')
+        pdf.set_xy(12, y + 1)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(100, 100, 100)
+        pdf.cell(0, 6, title.upper(), ln=True)
+        y += 12
+
+    def row(label: str, value: str, highlight=False):
+        nonlocal y
+        if highlight:
+            pdf.set_fill_color(255, 253, 235)
+            pdf.rect(10, y, 190, 8, 'F')
+        pdf.set_xy(12, y)
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(110, 110, 110)
+        pdf.cell(55, 7, label)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(30, 30, 30)
+        pdf.cell(0, 7, str(value), ln=True)
+        y += 8
+
+    # ── Passenger ───────────────────────────────────────────────────────────
+    section("Passenger Details")
+    row("Name", booking.get("passenger_name", ""))
+    if booking.get("passenger_email"):
+        row("Email", booking.get("passenger_email", ""))
+    if booking.get("passenger_phone"):
+        row("Phone", booking.get("passenger_phone", ""))
+    y += 4
+
+    # ── Transfer ────────────────────────────────────────────────────────────
+    section("Transfer Details")
+    row("Pickup", booking.get("pickup_location", ""))
+    row("Drop-off", booking.get("dropoff_location", ""))
+    row("Date", booking.get("pickup_date", ""))
+    row("Time", booking.get("pickup_time", ""))
+    row("Vehicle", booking.get("vehicle_type", ""))
+    if booking.get("flight_number"):
+        row("Flight Number", booking.get("flight_number", ""))
+    pax = str(booking.get("passengers", booking.get("adults", 1)))
+    row("Passengers", pax)
+    if booking.get("greeting_sign"):
+        row("Greeting Sign", booking.get("greeting_sign", ""))
+    y += 4
+
+    # ── Pricing ─────────────────────────────────────────────────────────────
+    section("Payment")
+    ccy = booking.get("currency", "GBP")
+    price = booking.get("customer_price") or booking.get("passenger_price") or booking.get("price", 0)
+    row("Total Price", f"{ccy} {float(price):.2f}", highlight=True)
+    pstatus = booking.get("payment_status", "pending").replace("_", " ").title()
+    row("Payment Status", pstatus)
+    y += 4
+
+    # ── Driver placeholder ───────────────────────────────────────────────────
+    section("Driver Information")
+    row("Driver", "Details will be provided 24 hours before your transfer")
+    row("WhatsApp", "+44 773 947 6432")
+    y += 4
+
+    # ── Footer ──────────────────────────────────────────────────────────────
+    pdf.set_fill_color(26, 26, 46)
+    pdf.rect(0, 270, 210, 27, 'F')
+    pdf.set_xy(12, 273)
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(160, 160, 160)
+    pdf.multi_cell(0, 5, "Planet Transfers  |  bookings@planettransfers.online  |  +44 773 947 6432  |  planettransfers.online\n"
+                         "This voucher is your official booking confirmation. Please present it to your driver.")
+
+    return bytes(pdf.output())
+
+
+async def _generate_and_send_voucher(booking: dict) -> None:
+    if not resend.api_key:
+        return
+    ref = booking.get("internal_booking_id") or f"PT-{booking.get('id','')[:8].upper()}"
+    passenger_email = booking.get("passenger_email", "")
+    if not passenger_email:
+        logger.warning(f"No passenger email for voucher {ref}")
+        return
+    try:
+        pdf_bytes = _generate_voucher_pdf(booking)
+        import base64
+        pdf_b64 = base64.b64encode(pdf_bytes).decode()
+        first = (booking.get("passenger_name") or "").split()[0] or "there"
+        html = f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
+    <p style="margin:4px 0 0;color:#fff;font-size:13px;">Booking Confirmation — {ref}</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#111;margin:0 0 12px;">Dear {first},</p>
+    <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 16px;">Your transfer is confirmed. Please find your booking voucher attached to this email.</p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:0 0 20px;">
+      <table width="100%" cellpadding="4" cellspacing="0">
+        <tr><td style="font-size:12px;color:#6b7280;width:40%;">Booking Ref</td><td style="font-size:13px;color:#111;font-weight:600;">{ref}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Pickup</td><td style="font-size:13px;color:#111;font-weight:600;">{booking.get('pickup_location','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Drop-off</td><td style="font-size:13px;color:#111;font-weight:600;">{booking.get('dropoff_location','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Date &amp; Time</td><td style="font-size:13px;color:#111;font-weight:600;">{booking.get('pickup_date','')} at {booking.get('pickup_time','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Vehicle</td><td style="font-size:13px;color:#111;font-weight:600;">{booking.get('vehicle_type','')}</td></tr>
+      </table>
+    </div>
+    <p style="font-size:13px;color:#374151;margin:0;">Driver details will be sent 24 hours before your transfer. Questions? WhatsApp us at <strong>+44 773 947 6432</strong>.</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
+  </td></tr>
+</table></td></tr></table></body></html>"""
+        await asyncio.to_thread(resend.Emails.send, {
+            "from":        f"Planet Transfers <{_SENDER_EMAIL}>",
+            "reply_to":    [_REPLY_TO_EMAIL],
+            "to":          [passenger_email],
+            "subject":     f"Your Booking Voucher — {ref} | Planet Transfers",
+            "html":        html,
+            "attachments": [{"filename": f"PlanetTransfers_{ref}.pdf", "content": pdf_b64}],
+            "headers":     {"Reply-To": _REPLY_TO_EMAIL},
+        })
+        await db.manual_bookings.update_one({"id": booking.get("id")}, {"$set": {"voucher_sent": True}})
+        await db.iway_bookings.update_one({"id": booking.get("id")}, {"$set": {"voucher_sent": True}})
+        logger.info(f"Voucher sent to {passenger_email} for {ref}")
+    except Exception as exc:
+        logger.error(f"Voucher send failed for {ref}: {exc}")
+
+
+async def _send_manual_booking_confirmation(booking: dict) -> None:
+    """Admin notification when a manual booking is created."""
+    if not resend.api_key:
+        return
+    ref = f"PT-{booking.get('id','')[:8].upper()}"
+    try:
+        await asyncio.to_thread(resend.Emails.send, {
+            "from":    f"Planet Transfers <{_SENDER_EMAIL}>",
+            "to":      [_ADMIN_NOTIFY_EMAIL],
+            "subject": f"Manual Booking Created {ref} — {booking.get('passenger_name','')} | {booking.get('pickup_location','')} → {booking.get('dropoff_location','')}",
+            "html":    _build_quote_admin_html({**booking, "id": booking.get("id",""), "passenger_email": booking.get("passenger_email",""), "trip_type":"one-way", "passengers": booking.get("passengers",1), "luggage": booking.get("luggage",0), "vehicle_preference": booking.get("vehicle_type",""), "special_requests": booking.get("internal_notes","")}),
+            "headers": {"Reply-To": booking.get("passenger_email","") or _REPLY_TO_EMAIL},
+        })
+        logger.info(f"Manual booking admin notification sent for {ref}")
+    except Exception as exc:
+        logger.error(f"Manual booking notification failed: {exc}")
+
+
 # ==================== SEED DATA ====================
 
 @api_router.post("/seed")

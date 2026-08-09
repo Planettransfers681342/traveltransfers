@@ -316,6 +316,19 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - iWay user ID: 143708
 - iWay API base: https://ng-api.iwayex.com
 
+### Admin Redesign — Unified Bookings + Manual Booking + Supplier Workflow + Voucher (Jun 2026)
+- [x] New unified admin dashboard (replaces old supplier-split view)
+- [x] Sidebar: Dashboard | All Bookings | New Booking | Quote Requests | Partner Requests | Settings
+- [x] All Bookings: iWay + manual bookings in one unified table with source badge (iWay/Manual)
+- [x] Each booking row: expandable supplier workflow panel
+- [x] Supplier workflow: supplier name, reference, supplier cost, fulfillment status, profit calculation, internal notes
+- [x] New Booking form: full manual booking creation (name, phone, email, flight, route, date/time, vehicle, price, payment status)
+- [x] Voucher PDF: fpdf2 generates branded A4 PDF with all booking details, "driver details 24hrs before"
+- [x] Send Voucher button: emails PDF attachment to passenger via Resend
+- [x] Backend: POST/GET /api/manual-bookings, GET /api/all-bookings, PUT /api/bookings/{id}/supplier, POST /api/bookings/{id}/send-voucher
+- [x] fpdf2==2.8.7 added to requirements.txt
+- [x] Tested: manual booking creation, unified view (iWay+manual), PDF generation, supplier update all PASS
+
 ### Partner Programme Launch (Jun 2026)
 - [x] /partners page — full B2B landing page with benefits, how it works, and partner enquiry form
 - [x] Backend: POST /api/partners, GET /api/partners, PUT /partners/{id}/status, DELETE
