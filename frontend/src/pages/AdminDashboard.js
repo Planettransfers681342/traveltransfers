@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   CarSimple, House, ListDashes, CurrencyGbp, SignOut, Plus, Trash,
   PencilSimple, X, Check, MagnifyingGlass, ChatCircleText, Handshake,
-  Buildings, Gear, ArrowRight, FilePdf, PaperPlaneTilt, CaretDown,
-  CaretUp, Note, CheckCircle, Clock, Warning, ArrowsClockwise,
+  Gear, FilePdf, Note, CheckCircle, ArrowsClockwise,
   UserCircle, Phone, Envelope
 } from '@phosphor-icons/react';
 import axios from 'axios';
@@ -161,12 +160,13 @@ export default function AdminDashboard() {
 
   const sourceLabel = (b) => SOURCE_LABELS[b.booking_source || b.source] || SOURCE_LABELS[b.source] || 'Manual Booking';
   const sourceColor = (b) => SOURCE_COLORS[b.booking_source || b.source] || SOURCE_COLORS[b.source] || 'bg-purple-100 text-purple-700';
-  const profit = (b) => b.supplier_cost ? (customerPrice(b) - parseFloat(b.supplier_cost)).toFixed(2) : '—';
+  // Safe price helper — iWay bookings use customer_price (mapped from price in /all-bookings)
+  const customerPrice = (b) => parseFloat(b.customer_price || b.price || b.total_price || 0);
 
   // ── Nav items ─────────────────────────────────────────────────────────────
   const NAV = [
     { id: 'dashboard',  label: 'Dashboard',       icon: <House size={18} /> },
-    { id: 'bookings',   label: 'All Bookings',     icon: <ListDashes size={18} />, badge: allBookings.filter(b=>b.fulfillment_status==='pending'||!b.fulfillment_status).length || null },
+    { id: 'bookings',   label: 'All Bookings',     icon: <ListDashes size={18} />, badge: allBookings.filter(b=>b.booking_status==='pending'||!b.booking_status).length || null },
     { id: 'new',        label: 'New Booking',      icon: <Plus size={18} /> },
     { id: 'quotes',     label: 'Quote Requests',   icon: <ChatCircleText size={18} />, badge: quotes.filter(q=>q.status==='new').length || null },
     { id: 'partners',   label: 'Partner Requests', icon: <Handshake size={18} />, badge: partners.filter(p=>p.status==='new').length || null },
@@ -206,10 +206,10 @@ export default function AdminDashboard() {
             <h1 className="text-2xl font-semibold text-slate-900 mb-6">Dashboard</h1>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
-                { label: 'Total Bookings',     value: allBookings.length,                                              color: 'text-blue-600' },
-                { label: 'Pending Fulfilment', value: allBookings.filter(b=>!b.fulfillment_status||b.fulfillment_status==='pending').length, color: 'text-yellow-600' },
-                { label: 'Confirmed',          value: allBookings.filter(b=>b.fulfillment_status==='confirmed').length, color: 'text-green-600' },
-                { label: 'Open Quotes',        value: quotes.filter(q=>q.status==='new').length,                       color: 'text-purple-600' },
+                { label: 'Total Bookings',  value: allBookings.length,                                                     color: 'text-blue-600' },
+                { label: 'Pending',         value: allBookings.filter(b=>!b.booking_status||b.booking_status==='pending').length, color: 'text-yellow-600' },
+                { label: 'Confirmed',       value: allBookings.filter(b=>b.booking_status==='confirmed').length,            color: 'text-green-600' },
+                { label: 'Open Quotes',     value: quotes.filter(q=>q.status==='new').length,                              color: 'text-purple-600' },
               ].map((c,i) => (
                 <div key={i} className="bg-white rounded-xl border border-slate-200 p-5">
                   <p className="text-xs text-slate-500 mb-1">{c.label}</p>
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-slate-800">{b.currency||'GBP'} {customerPrice(b).toFixed(2)}</p>
-                    <StatusBadge value={b.fulfillment_status||'pending'} colorMap={FULFILLMENT_COLORS} />
+                    <StatusBadge value={b.booking_status||'pending'} colorMap={FULFILLMENT_COLORS} />
                   </div>
                 </div>
               ))}
@@ -262,17 +262,15 @@ export default function AdminDashboard() {
                 <div className="text-center py-16 text-slate-400">No bookings found</div>
               ) : (
                 <div>
-                  {/* Table header */}
+                  {/* Table header — simplified, supplier fields hidden */}
                   <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                     <div className="col-span-1">Source</div>
                     <div className="col-span-2">Passenger</div>
-                    <div className="col-span-3">Route</div>
+                    <div className="col-span-4">Route</div>
                     <div className="col-span-1">Date</div>
-                    <div className="col-span-1">Price</div>
+                    <div className="col-span-2">Price</div>
                     <div className="col-span-1">Payment</div>
-                    <div className="col-span-1">Fulfil</div>
-                    <div className="col-span-1">Supplier</div>
-                    <div className="col-span-1">Profit</div>
+                    <div className="col-span-1">Status</div>
                   </div>
 
                   {filtered.map(b => (
@@ -283,7 +281,7 @@ export default function AdminDashboard() {
                         data-testid={`booking-row-${b.id?.slice(0,8)}`}
                       >
                         <div className="col-span-1">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${b.source==='manual' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sourceColor(b)}`}>
                             {b.source==='manual' ? 'Manual' : 'iWay'}
                           </span>
                         </div>
@@ -291,101 +289,58 @@ export default function AdminDashboard() {
                           <p className="font-medium text-slate-900 truncate">{b.passenger_name}</p>
                           <p className="text-xs text-slate-400 truncate">{b.passenger_email}</p>
                         </div>
-                        <div className="col-span-3">
+                        <div className="col-span-4">
                           <p className="text-slate-700 text-xs truncate">{b.pickup_location}</p>
                           <p className="text-slate-400 text-xs truncate">→ {b.dropoff_location}</p>
                         </div>
                         <div className="col-span-1 text-xs text-slate-600">{b.pickup_date}</div>
-                        <div className="col-span-1 font-semibold text-slate-800">{b.currency||'GBP'} {customerPrice(b).toFixed(2)}</div>
+                        <div className="col-span-2 font-semibold text-slate-800">{b.currency||'GBP'} {customerPrice(b).toFixed(2)}</div>
                         <div className="col-span-1"><StatusBadge value={b.payment_status||'unpaid'} colorMap={PAYMENT_COLORS} /></div>
-                        <div className="col-span-1"><StatusBadge value={b.fulfillment_status||'pending'} colorMap={FULFILLMENT_COLORS} /></div>
-                        <div className="col-span-1 text-xs text-slate-600 truncate">{b.supplier_name || '—'}</div>
-                        <div className="col-span-1 text-xs font-semibold text-green-700">{profit(b) !== '—' ? `£${profit(b)}` : '—'}</div>
+                        <div className="col-span-1"><StatusBadge value={b.booking_status||'pending'} colorMap={FULFILLMENT_COLORS} /></div>
                       </div>
 
-                      {/* ── Supplier Workflow Panel ── */}
+                      {/* ── Booking management panel (supplier fields hidden) ── */}
                       {expandedId === b.id && (
-                        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-
+                        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5" data-testid={`booking-expand-${b.id?.slice(0,8)}`}>
+                          <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
                             <div>
                               <label className="block text-xs font-semibold text-slate-500 mb-1">BOOKING STATUS</label>
                               <select value={supplierForm.booking_status||''} onChange={e=>setSF(f=>({...f,booking_status:e.target.value}))}
-                                className="input-field text-sm">
+                                className="input-field text-sm" data-testid="booking-status-select">
                                 <option value="pending">Pending</option>
                                 <option value="confirmed">Confirmed</option>
                                 <option value="cancelled">Cancelled</option>
                                 <option value="completed">Completed</option>
                               </select>
                             </div>
-
                             <div>
                               <label className="block text-xs font-semibold text-slate-500 mb-1">PAYMENT STATUS</label>
                               <select value={supplierForm.payment_status||''} onChange={e=>setSF(f=>({...f,payment_status:e.target.value}))}
-                                className="input-field text-sm">
+                                className="input-field text-sm" data-testid="payment-status-select">
                                 <option value="unpaid">Unpaid</option>
                                 <option value="paid">Paid</option>
                                 <option value="payment_completed">Payment Completed</option>
                                 <option value="refunded">Refunded</option>
                               </select>
                             </div>
-
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">FULFILLMENT STATUS</label>
-                              <select value={supplierForm.fulfillment_status||''} onChange={e=>setSF(f=>({...f,fulfillment_status:e.target.value}))}
-                                className="input-field text-sm">
-                                <option value="pending">Pending</option>
-                                <option value="sent">Sent to Supplier</option>
-                                <option value="confirmed">Supplier Confirmed</option>
-                                <option value="cancelled">Cancelled</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">SUPPLIER</label>
-                              <select value={supplierForm.supplier_name||''} onChange={e=>setSF(f=>({...f,supplier_name:e.target.value}))}
-                                className="input-field text-sm">
-                                <option value="">— Not assigned —</option>
-                                <option value="iWay">iWay</option>
-                                <option value="Talixo">Talixo</option>
-                                <option value="MyTransfers">MyTransfers</option>
-                                <option value="Offline Supplier">Offline Supplier</option>
-                                <option value="Other Platform">Other Platform</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">SUPPLIER REFERENCE</label>
-                              <input value={supplierForm.supplier_reference||''} onChange={e=>setSF(f=>({...f,supplier_reference:e.target.value}))}
-                                placeholder="Supplier booking ref" className="input-field text-sm" />
-                            </div>
-
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">SUPPLIER COST (£)</label>
-                              <input type="number" step="0.01" value={supplierForm.supplier_cost||''} onChange={e=>setSF(f=>({...f,supplier_cost:e.target.value}))}
-                                placeholder="0.00" className="input-field text-sm" />
-                              {supplierForm.supplier_cost && (
-                                <p className="text-xs text-green-600 mt-1 font-medium">
-                                  Profit: £{(customerPrice(b) - parseFloat(supplierForm.supplier_cost||0)).toFixed(2)}
-                                </p>
-                              )}
-                            </div>
                           </div>
 
                           <div className="mb-4">
                             <label className="block text-xs font-semibold text-slate-500 mb-1">INTERNAL NOTES</label>
                             <textarea value={supplierForm.internal_notes||''} onChange={e=>setSF(f=>({...f,internal_notes:e.target.value}))}
-                              rows={2} placeholder="Notes visible only to admin..." className="input-field text-sm resize-none w-full" />
+                              rows={2} placeholder="Notes visible only to admin..." className="input-field text-sm resize-none w-full" data-testid="internal-notes-input" />
                           </div>
 
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
                             <button onClick={() => saveSupplier(b.id)} disabled={savingId===b.id}
-                              className="btn-gold py-2 px-5 text-sm flex items-center gap-2 disabled:opacity-50">
+                              className="btn-gold py-2 px-5 text-sm flex items-center gap-2 disabled:opacity-50"
+                              data-testid="save-booking-btn">
                               <Check size={16} /> {savingId===b.id ? 'Saving...' : 'Save Changes'}
                             </button>
                             <button onClick={() => sendVoucher(b.id)} disabled={voucherLoading===b.id || !b.passenger_email}
                               className="flex items-center gap-2 text-sm font-medium px-5 py-2 border-2 border-[#1a1a2e] text-[#1a1a2e] hover:bg-[#1a1a2e] hover:text-white rounded-lg transition-all disabled:opacity-40"
-                              title={!b.passenger_email ? 'No email on this booking' : ''}>
+                              title={!b.passenger_email ? 'No email on this booking' : ''}
+                              data-testid="send-voucher-btn">
                               <FilePdf size={16} /> {voucherLoading===b.id ? 'Sending...' : b.voucher_sent ? 'Re-send Voucher' : 'Send Voucher PDF'}
                             </button>
                             <button onClick={() => setExpanded(null)} className="text-sm text-slate-400 hover:text-slate-600 ml-auto">
