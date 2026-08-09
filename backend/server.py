@@ -871,6 +871,22 @@ async def update_booking_supplier(booking_id: str, payload: dict):
     return {"ok": True}
 
 
+@api_router.delete("/bookings/{booking_id}")
+async def delete_booking(booking_id: str):
+    """Delete a booking — only allowed if no successful payment on record."""
+    booking = await db.manual_bookings.find_one({"id": booking_id}, {"_id": 0})
+    collection = "manual_bookings"
+    if not booking:
+        booking = await db.iway_bookings.find_one({"id": booking_id}, {"_id": 0})
+        collection = "iway_bookings"
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    if booking.get("payment_status") == "payment_completed":
+        raise HTTPException(status_code=403, detail="Cannot delete a booking with completed payment")
+    await db[collection].delete_one({"id": booking_id})
+    return {"ok": True, "deleted": booking_id}
+
+
 @api_router.post("/bookings/{booking_id}/send-voucher")
 async def send_voucher(booking_id: str, background_tasks: BackgroundTasks):
     booking = await db.manual_bookings.find_one({"id": booking_id}, {"_id": 0})
