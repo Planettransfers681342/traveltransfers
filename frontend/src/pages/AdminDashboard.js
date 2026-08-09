@@ -374,7 +374,7 @@ export default function AdminDashboard() {
               <div className="bg-green-50 border border-green-200 rounded-2xl p-10 text-center">
                 <CheckCircle size={48} weight="fill" className="text-green-500 mx-auto mb-3" />
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">Booking Created: {nbDone}</h3>
-                <p className="text-slate-500 text-sm mb-6">The booking has been added to All Bookings. Now assign a supplier and send the voucher.</p>
+                <p className="text-slate-500 text-sm mb-6">The booking has been added to All Bookings. You can now send the voucher PDF to the passenger.</p>
                 <div className="flex justify-center gap-3">
                   <button onClick={() => { setNBDone(null); setNB(EMPTY_BOOKING); }} className="btn-gold py-2 px-5 text-sm">Create Another</button>
                   <button onClick={() => { setTab('bookings'); setNBDone(null); setNB(EMPTY_BOOKING); }} className="border-2 border-slate-300 text-slate-700 py-2 px-5 rounded-lg text-sm hover:bg-slate-50">View All Bookings</button>

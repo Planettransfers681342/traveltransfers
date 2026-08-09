@@ -368,12 +368,27 @@ Rebuild Planet Transfers - a premium airport transfer booking service (planettra
 - [x] Talixo and MyTransfers remain DISABLED (feature flags off) for launch
 - [x] Full E2E smoke test passed (95%): search → results (10 iWay vehicles) → passenger details → admin dashboard
 
+### Admin Dashboard Simplification (Aug 2026)
+- [x] Fixed missing `customerPrice(b)` helper — safe fallback: customer_price → price → total_price → 0
+- [x] Removed Supplier, Profit, Fulfillment Status columns from All Bookings table
+- [x] Simplified expanded booking panel: Booking Status, Payment Status, Internal Notes, Send Voucher PDF only
+- [x] Dashboard stats now use booking_status (not fulfillment_status): Total / Pending / Confirmed / Open Quotes
+- [x] Nav badge counts pending booking_status (not fulfillment_status)
+- [x] New Booking success message updated (removed supplier reference)
+- [x] Booking Source labels in place: iWay White Label / Manual Booking / Quote Request
+- [x] Backend supplier fields preserved (hidden in UI only, data not deleted)
+
+### Production Cleanup (Aug 2026)
+- [x] Deleted test route "Test Airport → Test City Center" from production database
+- [x] Deleted all 6 test quotes from production database (Live Test, test, Deploy Test, test gb, Test K, G)
+- [ ] Production iWay bookings review: 2 with payment_completed are real (Georgi Milev £148.81, Dinko £59.49). 3 others are test/cancelled — user to decide if they should be cleaned from the DB
+- [x] Route prices on production are clean (7 real routes remaining)
+- [x] STRIPE_API_KEY=sk_test_emergent confirmed as legacy dead code — iWay payments use iWay's own live infrastructure, not this key
+
 ### Upcoming — P0 (Deployment)
-- [ ] Deploy app via Emergent platform
-- [ ] Connect planettransfers.online custom domain
-- [ ] Configure DNS at registrar (A record + CNAME www)
-- [ ] Verify SSL auto-provisioned
-- [ ] Post-deploy E2E test: Search → Results → Passenger Details → Payment → Success Page → Customer Email → Admin Dashboard
+- [ ] Deploy preview code to production (planettransfers.online) — admin dashboard simplification not yet live on production
+- [ ] Production: check and optionally delete 3 cancelled/pending test iWay bookings (Tsvetomir Markov, G, Georgi Milev cancelled) from admin dashboard
+- [ ] Manual end-to-end payment test: user to complete a real booking on production with own card to verify confirmation email arrives
 
 ### P1 - High Priority
 - [ ] Fix WhatsApp number (user to provide correct number - currently +44 773 947 6432)
