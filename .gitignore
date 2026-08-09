@@ -30,7 +30,19 @@ next-env.d.ts
 dist/
 dist
 
-# Environment files (comprehensive coverage)
+# Agent workspace notes (internal use only — contain credentials)
+memory/
+test_reports/
+# Environment files — real values never committed
+.env
+.env.*
+*.env
+*.env.*
+backend/.env
+frontend/.env
+# Allow safe placeholder files (no real values)
+!.env.example
+!**/.env.example
 
 *token.json*
 *credentials.json*

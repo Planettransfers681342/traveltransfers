@@ -1,5 +1,6 @@
 import requests
 import sys
+import os
 from datetime import datetime
 import json
 
@@ -126,7 +127,7 @@ class PlanetTransfersAPITester:
             "POST",
             "admin/login",
             200,
-            {"password": "planet2024"}
+            {"password": os.environ.get("ADMIN_PASSWORD", "")}
         )
         
         if success and response.get('success'):

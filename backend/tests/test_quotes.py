@@ -370,7 +370,7 @@ class TestAdminQuotesIntegration:
         """Test admin login with correct password"""
         response = requests.post(
             f"{BASE_URL}/api/admin/login",
-            json={"password": "planet2024"}
+            json={"password": os.environ.get("ADMIN_PASSWORD", "")}
         )
         
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"

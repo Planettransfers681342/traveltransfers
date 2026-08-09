@@ -207,7 +207,7 @@ VEHICLE_TYPES = [
 ]
 
 # Admin password from environment
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'planet2024')
+ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -1138,7 +1138,7 @@ async def sitemap():
 
 # ==================== IWAY PROXY ====================
 
-IWAY_USER_ID = os.environ.get('IWAY_USER_ID', '143708')
+IWAY_USER_ID = os.environ['IWAY_USER_ID']
 IWAY_API_BASE = os.environ.get('IWAY_API_BASE', 'https://ng-api.iwayex.com')
 
 # ==================== EMAIL (RESEND) ====================

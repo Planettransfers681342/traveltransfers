@@ -86,9 +86,6 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          <p className="text-xs text-slate-500 text-center mt-6">
-            Default password: planet2024
-          </p>
         </div>
 
         <div className="text-center mt-6">
