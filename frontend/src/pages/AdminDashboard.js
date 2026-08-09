@@ -39,7 +39,8 @@ const EMPTY_BOOKING = {
   pickup_location: '', dropoff_location: '', pickup_date: '', pickup_time: '',
   vehicle_type: 'Standard', passengers: 1, luggage: 0,
   customer_price: '', currency: 'GBP', payment_status: 'unpaid',
-  booking_status: 'confirmed', internal_notes: '', greeting_sign: ''
+  booking_status: 'confirmed', internal_notes: '', greeting_sign: '',
+  booking_source: 'manual'
 };
 
 export default function AdminDashboard() {
@@ -147,7 +148,19 @@ export default function AdminDashboard() {
     setNBL(false);
   };
 
-  const customerPrice = (b) => parseFloat(b.customer_price || b.passenger_price || b.price || 0);
+  const SOURCE_LABELS = {
+    iway:          'iWay White Label',
+    manual:        'Manual Booking',
+    quote_request: 'Quote Request',
+  };
+  const SOURCE_COLORS = {
+    iway:          'bg-blue-100 text-blue-700',
+    manual:        'bg-purple-100 text-purple-700',
+    quote_request: 'bg-green-100 text-green-700',
+  };
+
+  const sourceLabel = (b) => SOURCE_LABELS[b.booking_source || b.source] || SOURCE_LABELS[b.source] || 'Manual Booking';
+  const sourceColor = (b) => SOURCE_COLORS[b.booking_source || b.source] || SOURCE_COLORS[b.source] || 'bg-purple-100 text-purple-700';
   const profit = (b) => b.supplier_cost ? (customerPrice(b) - parseFloat(b.supplier_cost)).toFixed(2) : '—';
 
   // ── Nav items ─────────────────────────────────────────────────────────────
