@@ -123,40 +123,70 @@ class QuoteRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     trip_type: str
+    # ── Outbound ──
     pickup_location: str
     dropoff_location: str
     pickup_date: str
     pickup_time: str
-    return_date: Optional[str] = None
-    return_time: Optional[str] = None
+    flight_number: Optional[str] = None           # arrival flight (outbound)
+    flight_arrival_time: Optional[str] = None      # scheduled arrival time
     passengers: int
+    children: Optional[int] = 0
+    child_seat_details: Optional[str] = None       # ages + seat types needed
     luggage: int
     vehicle_preference: Optional[str] = None
+    special_requests: Optional[str] = None
+    # ── Return (round-trip only) ──
+    return_pickup_location: Optional[str] = None
+    return_dropoff_location: Optional[str] = None
+    return_date: Optional[str] = None
+    return_time: Optional[str] = None              # kept for backward compat (Boryana)
+    return_pickup_time: Optional[str] = None       # desired pickup time for return
+    return_flight_number: Optional[str] = None     # departure flight (return)
+    return_flight_departure_time: Optional[str] = None  # scheduled departure time
+    same_pax_luggage: Optional[bool] = True
+    return_passengers: Optional[int] = None
+    return_luggage: Optional[int] = None
+    return_notes: Optional[str] = None
+    # ── Passenger ──
     passenger_name: str
     passenger_email: str
     passenger_phone: str
-    flight_number: Optional[str] = None
-    special_requests: Optional[str] = None
-    status: str = "new"  # new, responded, converted, closed
+    # ── Admin ──
+    status: str = "new"
     admin_notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class QuoteRequestCreate(BaseModel):
     trip_type: str
+    # ── Outbound ──
     pickup_location: str
     dropoff_location: str
     pickup_date: str
     pickup_time: str
-    return_date: Optional[str] = None
-    return_time: Optional[str] = None
+    flight_number: Optional[str] = None
+    flight_arrival_time: Optional[str] = None
     passengers: int
+    children: Optional[int] = 0
+    child_seat_details: Optional[str] = None
     luggage: int
     vehicle_preference: Optional[str] = None
+    special_requests: Optional[str] = None
+    # ── Return ──
+    return_pickup_location: Optional[str] = None
+    return_dropoff_location: Optional[str] = None
+    return_date: Optional[str] = None
+    return_pickup_time: Optional[str] = None
+    return_flight_number: Optional[str] = None
+    return_flight_departure_time: Optional[str] = None
+    same_pax_luggage: Optional[bool] = True
+    return_passengers: Optional[int] = None
+    return_luggage: Optional[int] = None
+    return_notes: Optional[str] = None
+    # ── Passenger ──
     passenger_name: str
     passenger_email: str
     passenger_phone: str
-    flight_number: Optional[str] = None
-    special_requests: Optional[str] = None
 
 class QuoteStatusUpdate(BaseModel):
     status: str
@@ -603,7 +633,7 @@ async def get_quote_by_id(quote_id: str):
 @api_router.put("/quotes/{quote_id}/status")
 async def update_quote_status(quote_id: str, update: QuoteStatusUpdate):
     """Update quote status"""
-    valid_statuses = ["new", "responded", "converted", "closed"]
+    valid_statuses = ["new", "reviewing", "quoted", "accepted", "declined", "closed"]
     if update.status not in valid_statuses:
         raise HTTPException(status_code=400, detail="Invalid quote status")
     
@@ -1473,31 +1503,65 @@ async def _send_booking_confirmation(booking: dict) -> None:
 
 def _build_quote_admin_html(quote: dict) -> str:
     qid = quote.get('id', '')[:8].upper()
+    is_rt = quote.get('trip_type') == 'round-trip'
+
+    def row(label, value, alt='—'):
+        v = value if value else alt
+        return f'<tr><td style="padding:7px 12px;font-size:12px;color:#6b7280;width:38%;font-weight:bold;border-bottom:1px solid #e5e7eb;">{label}</td><td style="padding:7px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{v}</td></tr>'
+
+    children = quote.get('children', 0) or 0
+    child_block = f'{children} child(ren)' + (f' — {quote.get("child_seat_details","")}' if quote.get('child_seat_details') else '') if children else 'None'
+
+    return_pickup = quote.get('return_pickup_time') or quote.get('return_time', '')
+    ret_pax = quote.get('return_passengers') if not quote.get('same_pax_luggage', True) else quote.get('passengers')
+    ret_lug = quote.get('return_luggage') if not quote.get('same_pax_luggage', True) else quote.get('luggage')
+
+    return_section = f"""
+    <tr><td colspan="2" style="padding:12px 12px 4px;font-size:12px;font-weight:bold;color:#b45309;text-transform:uppercase;letter-spacing:.06em;background:#fffbeb;border-bottom:1px solid #fde68a;">Return Journey</td></tr>
+    {row('Return Pickup', quote.get('return_pickup_location'))}
+    {row('Return Drop-off', quote.get('return_dropoff_location'))}
+    {row('Return Date', quote.get('return_date'))}
+    {row('Desired Pickup Time', return_pickup)}
+    {row('Return Flight No.', (quote.get('return_flight_number') or '').upper() or None)}
+    {row('Flight Departure Time', quote.get('return_flight_departure_time'))}
+    {row('Return Passengers', ret_pax)}
+    {row('Return Luggage', ret_lug)}
+    {row('Return Notes', quote.get('return_notes'))}
+    """ if is_rt else ''
+
     return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
 <tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+<table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
   <tr><td style="background:#1a1a2e;padding:24px 32px;">
     <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
     <p style="margin:4px 0 0;color:#fff;font-size:13px;">New Quote Request — QT-{qid}</p>
   </td></tr>
-  <tr><td style="padding:28px 32px;">
-    <p style="font-size:15px;color:#111;font-weight:bold;margin:0 0 16px;">A new quote request has been submitted.</p>
+  <tr><td style="padding:24px 32px 0;">
+    <p style="font-size:15px;color:#111;font-weight:bold;margin:0 0 16px;">A new {"round-trip " if is_rt else ""}quote request has been submitted.</p>
     <table width="100%" cellpadding="0" cellspacing="0">
-      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;width:38%;font-weight:bold;border-bottom:1px solid #e5e7eb;">Customer</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passenger_name','')}</td></tr>
-      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Email</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passenger_email','')}</td></tr>
-      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Phone</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passenger_phone','')}</td></tr>
-      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">From</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('pickup_location','')}</td></tr>
-      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">To</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('dropoff_location','')}</td></tr>
-      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Date</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{_format_email_date(quote.get('pickup_date',''))} at {quote.get('pickup_time','')}</td></tr>
-      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Trip Type</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('trip_type','one-way').replace('-',' ').title()}</td></tr>
-      <tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Passengers</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('passengers','')} passengers, {quote.get('luggage','')} bags</td></tr>
-      <tr style="background:#f9fafb;"><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Vehicle Preference</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">{quote.get('vehicle_preference','Not specified')}</td></tr>
-      {'<tr><td style="padding:8px 12px;font-size:12px;color:#6b7280;font-weight:bold;border-bottom:1px solid #e5e7eb;">Special Requests</td><td style="padding:8px 12px;font-size:13px;color:#111;border-bottom:1px solid #e5e7eb;">' + quote.get('special_requests','') + '</td></tr>' if quote.get('special_requests') else ''}
+      <tr><td colspan="2" style="padding:8px 12px 4px;font-size:12px;font-weight:bold;color:#1e40af;text-transform:uppercase;letter-spacing:.06em;background:#eff6ff;border-bottom:1px solid #bfdbfe;">Customer</td></tr>
+      {row('Name', quote.get('passenger_name'))}
+      {row('Email', quote.get('passenger_email'))}
+      {row('Phone', quote.get('passenger_phone'))}
+      <tr><td colspan="2" style="padding:12px 12px 4px;font-size:12px;font-weight:bold;color:#065f46;text-transform:uppercase;letter-spacing:.06em;background:#ecfdf5;border-bottom:1px solid #a7f3d0;">Outbound Journey</td></tr>
+      {row('Trip Type', ('Round-Trip' if is_rt else 'One-Way'))}
+      {row('Pickup', quote.get('pickup_location'))}
+      {row('Drop-off', quote.get('dropoff_location'))}
+      {row('Pickup Date', _format_email_date(quote.get('pickup_date','')))}
+      {row('Desired Pickup Time', quote.get('pickup_time'))}
+      {row('Arrival Flight No.', (quote.get('flight_number') or '').upper() or None)}
+      {row('Scheduled Arrival Time', quote.get('flight_arrival_time'))}
+      {row('Passengers', quote.get('passengers'))}
+      {row('Children', child_block)}
+      {row('Luggage', str(quote.get('luggage','')) + ' bags')}
+      {row('Vehicle Preference', quote.get('vehicle_preference') or 'No preference')}
+      {row('Special Requests', quote.get('special_requests'))}
+      {return_section}
     </table>
-    <p style="margin:20px 0 0;font-size:13px;color:#6b7280;">Reply directly to this email to respond to the customer.</p>
+    <p style="margin:20px 0 8px;font-size:13px;color:#6b7280;">Reply directly to this email to respond to the customer.</p>
   </td></tr>
-  <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+  <tr><td style="background:#f9fafb;padding:14px 32px;text-align:center;border-top:1px solid #e5e7eb;">
     <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
   </td></tr>
 </table>
@@ -1507,6 +1571,17 @@ def _build_quote_admin_html(quote: dict) -> str:
 
 def _build_quote_customer_html(quote: dict) -> str:
     qid = quote.get('id', '')[:8].upper()
+    is_rt = quote.get('trip_type') == 'round-trip'
+    return_pickup = quote.get('return_pickup_time') or quote.get('return_time', '')
+
+    return_block = f"""
+      <tr style="background:#fffbeb;"><td colspan="2" style="padding:8px 12px 4px;font-size:11px;font-weight:bold;color:#b45309;text-transform:uppercase;letter-spacing:.05em;">Return Journey</td></tr>
+      <tr><td style="font-size:12px;color:#6b7280;padding:3px 12px;width:42%;">Date</td><td style="font-size:13px;color:#111;font-weight:600;padding:3px 12px;">{quote.get('return_date','—')}</td></tr>
+      <tr><td style="font-size:12px;color:#6b7280;padding:3px 12px;">Pickup Time</td><td style="font-size:13px;color:#111;font-weight:600;padding:3px 12px;">{return_pickup or '—'}</td></tr>
+      {('<tr><td style="font-size:12px;color:#6b7280;padding:3px 12px;">Return From</td><td style="font-size:13px;color:#111;font-weight:600;padding:3px 12px;">' + quote.get('return_pickup_location','') + '</td></tr>') if quote.get('return_pickup_location') else ''}
+      {('<tr><td style="font-size:12px;color:#6b7280;padding:3px 12px;">Return Flight</td><td style="font-size:13px;color:#111;font-weight:600;padding:3px 12px;">' + (quote.get('return_flight_number') or '').upper() + '</td></tr>') if quote.get('return_flight_number') else ''}
+    """ if is_rt else ''
+
     return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
 <tr><td align="center">
@@ -1518,27 +1593,28 @@ def _build_quote_customer_html(quote: dict) -> str:
   <tr><td style="padding:28px 32px;">
     <p style="font-size:15px;color:#111;margin:0 0 8px;">Dear {quote.get('passenger_name','').split()[0] if quote.get('passenger_name') else 'there'},</p>
     <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 20px;">
-      Thank you for your quote request. We have received your details and our team will review your route and get back to you with a price within <strong>a few hours</strong>.
+      Thank you for your {"round-trip " if is_rt else ""}quote request. Our team will review your route and get back to you with a price within <strong>a few hours</strong>.
     </p>
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:0 0 20px;">
       <p style="margin:0 0 10px;font-size:12px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Your Transfer Summary</p>
       <table width="100%" cellpadding="4" cellspacing="0">
         <tr><td style="font-size:12px;color:#6b7280;width:40%;">From</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('pickup_location','')}</td></tr>
         <tr><td style="font-size:12px;color:#6b7280;">To</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('dropoff_location','')}</td></tr>
-        <tr><td style="font-size:12px;color:#6b7280;">Date</td><td style="font-size:13px;color:#111;font-weight:600;">{_format_email_date(quote.get('pickup_date',''))} at {quote.get('pickup_time','')}</td></tr>
-        <tr><td style="font-size:12px;color:#6b7280;">Passengers</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('passengers','')} passengers</td></tr>
-        {'<tr><td style="font-size:12px;color:#6b7280;">Vehicle</td><td style="font-size:13px;color:#111;font-weight:600;">' + quote.get('vehicle_preference','') + '</td></tr>' if quote.get('vehicle_preference') else ''}
+        <tr><td style="font-size:12px;color:#6b7280;">Date &amp; Time</td><td style="font-size:13px;color:#111;font-weight:600;">{_format_email_date(quote.get('pickup_date',''))} at {quote.get('pickup_time','')}</td></tr>
+        <tr><td style="font-size:12px;color:#6b7280;">Passengers</td><td style="font-size:13px;color:#111;font-weight:600;">{quote.get('passengers','')} adult(s){(', ' + str(quote.get('children',0)) + ' child(ren)') if quote.get('children') else ''}</td></tr>
+        {('<tr><td style="font-size:12px;color:#6b7280;">Vehicle</td><td style="font-size:13px;color:#111;font-weight:600;">' + quote.get('vehicle_preference','') + '</td></tr>') if quote.get('vehicle_preference') else ''}
+        {return_block}
       </table>
     </div>
     <p style="font-size:13px;color:#374151;line-height:1.6;margin:0 0 6px;">
-      Your reference number is <strong>QT-{qid}</strong>. Please quote this if you contact us.
+      Your reference: <strong>QT-{qid}</strong>. Please quote this if you contact us.
     </p>
     <p style="font-size:13px;color:#374151;line-height:1.6;margin:0;">
-      If you have any questions, you can reach us on WhatsApp at <strong>+44 773 947 6432</strong> or reply to this email.
+      Questions? WhatsApp: <strong>+44 773 947 6432</strong> or reply to this email.
     </p>
   </td></tr>
   <tr><td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
-    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online · This is an automated confirmation — replies go to our team.</p>
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
   </td></tr>
 </table>
 </td></tr></table>

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CarSimple, House, ListDashes, CurrencyGbp, SignOut, Plus, Trash,
   PencilSimple, X, Check, MagnifyingGlass, ChatCircleText, Handshake,
   Gear, FilePdf, Note, CheckCircle, ArrowsClockwise,
-  UserCircle, Phone, Envelope
+  UserCircle, Phone, Envelope, Copy, ArrowDown, ArrowUp
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -59,6 +59,11 @@ export default function AdminDashboard() {
   const [newBooking, setNB]       = useState(EMPTY_BOOKING);
   const [nbLoading, setNBL]       = useState(false);
   const [nbDone, setNBDone]       = useState(null);
+  // quote expand
+  const [expandedQuoteId, setExpandedQuote] = useState(null);
+  const [quoteForm, setQF]                  = useState({});
+  const [savingQuoteId, setSavingQId]       = useState(null);
+  const [copiedField, setCopied]            = useState('');
   // routes
   const [showRouteModal, setRouteModal] = useState(false);
   const [editingRoute, setEditRoute]    = useState(null);
@@ -120,6 +125,47 @@ export default function AdminDashboard() {
     setSavingId(null);
     setExpanded(null);
   };
+
+  const toggleQuote = (q) => {
+    if (expandedQuoteId === q.id) { setExpandedQuote(null); return; }
+    setExpandedQuote(q.id);
+    setQF({ status: q.status || 'new', admin_notes: q.admin_notes || '' });
+  };
+
+  const saveQuote = async (qid, e) => {
+    e.stopPropagation();
+    setSavingQId(qid);
+    try {
+      await axios.put(`${API}/quotes/${qid}/status`, quoteForm);
+      setQuotes(prev => prev.map(x => x.id === qid ? { ...x, ...quoteForm } : x));
+    } catch (err) { console.error(err); }
+    finally { setSavingQId(null); }
+  };
+
+  const copyToClipboard = (text, label, e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(label);
+      setTimeout(() => setCopied(''), 2000);
+    });
+  };
+
+  const QUOTE_STATUS_COLORS = {
+    new:       'bg-blue-50 text-blue-700 border-blue-200',
+    reviewing: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    quoted:    'bg-purple-50 text-purple-700 border-purple-200',
+    accepted:  'bg-green-50 text-green-700 border-green-200',
+    declined:  'bg-red-50 text-red-700 border-red-200',
+    closed:    'bg-slate-50 text-slate-500 border-slate-200',
+  };
+  const qStatuses = ['new','reviewing','quoted','accepted','declined','closed'];
+  const qStatusLabel = s => ({ new:'New', reviewing:'Reviewing', quoted:'Quoted', accepted:'Accepted', declined:'Declined', closed:'Closed' }[s] || s);
+  const QD = (label, value) => (
+    <div>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">{label}</p>
+      <p className="text-sm text-slate-800 break-words">{value || '—'}</p>
+    </div>
+  );
 
   const sendVoucher = async (id) => {
     setVL(id);
@@ -483,50 +529,178 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               {quotes.length === 0 ? (
                 <div className="text-center py-16 text-slate-400">No quote requests yet</div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      <th className="px-4 py-3 text-left">Passenger</th>
-                      <th className="px-4 py-3 text-left">Route</th>
-                      <th className="px-4 py-3 text-left">Date</th>
-                      <th className="px-4 py-3 text-left">Vehicle</th>
-                      <th className="px-4 py-3 text-left">Status</th>
-                      <th className="px-4 py-3 text-left">Received</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {quotes.map(q => (
-                      <tr key={q.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-slate-900">{q.passenger_name}</p>
-                          <p className="text-xs text-slate-400">{q.passenger_email}</p>
-                          <p className="text-xs text-slate-400">{q.passenger_phone}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-slate-700 text-xs">{q.pickup_location}</p>
-                          <p className="text-slate-400 text-xs">→ {q.dropoff_location}</p>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-600">{q.pickup_date} {q.pickup_time}</td>
-                        <td className="px-4 py-3 text-xs text-slate-600">{q.vehicle_preference||'—'}</td>
-                        <td className="px-4 py-3">
-                          <select value={q.status} onChange={async e => {
-                            await axios.put(`${API}/quotes/${q.id}/status`, { status: e.target.value });
-                            setQuotes(prev => prev.map(x => x.id===q.id ? {...x,status:e.target.value} : x));
-                          }} className="text-xs px-2 py-1 rounded-full border font-medium bg-white">
-                            <option value="new">New</option>
-                            <option value="contacted">Contacted</option>
-                            <option value="quoted">Quoted</option>
-                            <option value="booked">Booked</option>
-                            <option value="closed">Closed</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{new Date(q.created_at).toLocaleDateString('en-GB')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              ) : quotes.map(q => {
+                const isOpen = expandedQuoteId === q.id;
+                const isRT = q.trip_type === 'round-trip';
+                const retPickup = q.return_pickup_time || q.return_time;
+                const retPax = q.same_pax_luggage !== false ? q.passengers : q.return_passengers;
+                const retLug = q.same_pax_luggage !== false ? q.luggage : q.return_luggage;
+
+                return (
+                  <div key={q.id} className="border-b border-slate-100 last:border-b-0">
+                    {/* Row */}
+                    <div
+                      onClick={() => toggleQuote(q)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer"
+                      data-testid={`quote-row-${q.id?.slice(0,8)}`}
+                    >
+                      <div className="flex-1 min-w-0 grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-3">
+                          <p className="font-medium text-slate-900 text-sm truncate">{q.passenger_name}</p>
+                          <p className="text-xs text-slate-400 truncate">{q.passenger_email}</p>
+                        </div>
+                        <div className="col-span-3">
+                          <p className="text-xs text-slate-600 truncate">{q.pickup_location}</p>
+                          <p className="text-xs text-slate-400 truncate">→ {q.dropoff_location}</p>
+                        </div>
+                        <div className="col-span-2 text-xs text-slate-600">
+                          <p>{q.pickup_date}</p>
+                          {isRT && <p className="text-amber-600 font-medium">Round-Trip</p>}
+                        </div>
+                        <div className="col-span-2">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${QUOTE_STATUS_COLORS[q.status] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                            {qStatusLabel(q.status)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-xs text-slate-400">
+                          {new Date(q.created_at).toLocaleDateString('en-GB')}
+                        </div>
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleQuote(q); }}
+                        className="flex-none flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition whitespace-nowrap"
+                        data-testid={`quote-view-${q.id?.slice(0,8)}`}
+                      >
+                        {isOpen ? <><ArrowUp size={13}/> Close</> : <><ArrowDown size={13}/> View Details</>}
+                      </button>
+                    </div>
+
+                    {/* Expanded detail panel */}
+                    {isOpen && (
+                      <div className="bg-slate-50 border-t border-slate-200 px-5 py-5" data-testid={`quote-detail-${q.id?.slice(0,8)}`}>
+                        {/* Header */}
+                        <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+                          <div>
+                            <p className="text-xs text-slate-400 mb-0.5">Reference</p>
+                            <p className="text-lg font-bold text-[#1a1a2e] tracking-wider">QT-{q.id?.slice(0,8).toUpperCase()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-400">Received {new Date(q.created_at).toLocaleString('en-GB')}</p>
+                            <p className="text-xs font-medium mt-0.5">{isRT ? '✈ Round-Trip' : 'One-Way'}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                          {/* Customer */}
+                          <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Customer</p>
+                            {QD('Name', q.passenger_name)}
+                            <div>
+                              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Email</p>
+                              <div className="flex items-center gap-2">
+                                <a href={`mailto:${q.passenger_email}`}
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-sm text-blue-600 hover:underline break-all">{q.passenger_email}</a>
+                                <button onClick={e => copyToClipboard(q.passenger_email, 'email', e)}
+                                  className="flex-none text-slate-400 hover:text-slate-700 transition" title="Copy email">
+                                  {copiedField === 'email' ? <CheckCircle size={14} weight="fill" className="text-green-500"/> : <Copy size={14}/>}
+                                </button>
+                                <a href={`mailto:${q.passenger_email}?subject=Re: Quote Request QT-${q.id?.slice(0,8).toUpperCase()}`}
+                                  onClick={e => e.stopPropagation()}
+                                  className="flex-none" title="Reply by email">
+                                  <Envelope size={15} className="text-blue-500 hover:text-blue-700"/>
+                                </a>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Phone / WhatsApp</p>
+                              <div className="flex items-center gap-2">
+                                <a href={`tel:${q.passenger_phone}`} onClick={e => e.stopPropagation()}
+                                  className="text-sm text-slate-800">{q.passenger_phone}</a>
+                                <button onClick={e => copyToClipboard(q.passenger_phone, 'phone', e)}
+                                  className="flex-none text-slate-400 hover:text-slate-700 transition" title="Copy phone">
+                                  {copiedField === 'phone' ? <CheckCircle size={14} weight="fill" className="text-green-500"/> : <Copy size={14}/>}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Outbound */}
+                          <div className="bg-white rounded-xl p-4 border border-blue-100 space-y-3">
+                            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">Outbound Journey</p>
+                            {QD('From', q.pickup_location)}
+                            {QD('To', q.dropoff_location)}
+                            {QD('Pickup Date', q.pickup_date)}
+                            {QD('Desired Pickup Time', q.pickup_time)}
+                            {QD('Arrival Flight No.', q.flight_number)}
+                            {QD('Scheduled Arrival Time', q.flight_arrival_time)}
+                            {QD('Adults', q.passengers)}
+                            {QD('Children', q.children > 0 ? `${q.children}${q.child_seat_details ? ' — ' + q.child_seat_details : ''}` : null)}
+                            {QD('Luggage', q.luggage != null ? `${q.luggage} bag(s)` : null)}
+                            {QD('Vehicle Preference', q.vehicle_preference)}
+                          </div>
+
+                          {/* Return / Notes */}
+                          <div className="space-y-4">
+                            {isRT && (
+                              <div className="bg-white rounded-xl p-4 border border-amber-200 space-y-3">
+                                <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-2">Return Journey</p>
+                                {QD('Return From', q.return_pickup_location)}
+                                {QD('Return To', q.return_dropoff_location)}
+                                {QD('Return Date', q.return_date)}
+                                {QD('Desired Pickup Time', retPickup)}
+                                {QD('Departure Flight No.', q.return_flight_number)}
+                                {QD('Scheduled Departure', q.return_flight_departure_time)}
+                                {QD('Passengers', retPax)}
+                                {QD('Luggage', retLug != null ? `${retLug} bag(s)` : null)}
+                                {q.return_notes && QD('Return Notes', q.return_notes)}
+                              </div>
+                            )}
+
+                            <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+                              {q.special_requests && QD('Special Requests', q.special_requests)}
+
+                              {/* Status */}
+                              <div onClick={e => e.stopPropagation()}>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Status</p>
+                                <select
+                                  value={quoteForm.status || q.status}
+                                  onChange={e => { e.stopPropagation(); setQF(f => ({...f, status: e.target.value})); }}
+                                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                                  data-testid="quote-status-select"
+                                >
+                                  {qStatuses.map(s => <option key={s} value={s}>{qStatusLabel(s)}</option>)}
+                                </select>
+                              </div>
+
+                              {/* Admin notes */}
+                              <div onClick={e => e.stopPropagation()}>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Admin Notes</p>
+                                <textarea
+                                  value={quoteForm.admin_notes ?? ''}
+                                  onChange={e => { e.stopPropagation(); setQF(f => ({...f, admin_notes: e.target.value})); }}
+                                  rows={3} placeholder="Internal notes — not visible to customer"
+                                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                                  data-testid="quote-admin-notes"
+                                />
+                              </div>
+
+                              <button
+                                onClick={e => saveQuote(q.id, e)}
+                                disabled={savingQuoteId === q.id}
+                                className="btn-gold w-full py-2 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                                data-testid="save-quote-btn"
+                              >
+                                <Check size={15}/> {savingQuoteId === q.id ? 'Saving…' : 'Save Changes'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
