@@ -10,6 +10,72 @@ import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// ── Booking.com-style blue used throughout admin action buttons ──
+const BLU = 'bg-[#0071c2] hover:bg-[#005999] text-white';
+
+function QuoteReplyPanel({ quoteId, passengerEmail, api, onSent }) {
+  const [open, setOpen] = React.useState(false);
+  const [form, setForm] = React.useState({ price: '', message: '', payment_link: '' });
+  const [sending, setSending] = React.useState(false);
+  const [sent, setSent] = React.useState(false);
+  if (!passengerEmail) return null;
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4" onClick={e => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        className={`w-full py-2.5 text-sm font-semibold rounded-lg ${BLU} flex items-center justify-center gap-2 transition`}
+        data-testid="send-quote-reply-btn"
+      >
+        <Envelope size={15} weight="fill" /> {sent ? 'Quote Sent ✓' : 'Send Quote to Customer'}
+      </button>
+      {open && !sent && (
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Price (£) — leave blank if discussing</label>
+            <input value={form.price} onChange={e => setForm(f => ({...f, price: e.target.value}))}
+              placeholder="e.g. 89.50" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              data-testid="reply-price" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Your Message *</label>
+            <textarea value={form.message} onChange={e => setForm(f => ({...f, message: e.target.value}))}
+              rows={4} placeholder={"Dear [name],\n\nThank you for your quote request. Please find your transfer price above…"}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+              data-testid="reply-message" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Payment Link — optional</label>
+            <input value={form.payment_link} onChange={e => setForm(f => ({...f, payment_link: e.target.value}))}
+              placeholder="Paste iWay or manual booking payment link" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              data-testid="reply-payment-link" />
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={e => { e.stopPropagation(); setOpen(false); }}
+              className="flex-none px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition">
+              Cancel
+            </button>
+            <button type="button" disabled={sending || !form.message.trim()}
+              onClick={async e => {
+                e.stopPropagation();
+                setSending(true);
+                try {
+                  await axios.post(`${api}/quotes/${quoteId}/reply`, form);
+                  setSent(true); setOpen(false); onSent();
+                } catch(err) { alert('Failed to send. Please try again.'); }
+                finally { setSending(false); }
+              }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg ${BLU} disabled:opacity-50 transition`}
+              data-testid="confirm-reply-btn">
+              {sending ? 'Sending…' : `Send to ${passengerEmail}`}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const FULFILLMENT_COLORS = {
   pending:   'bg-yellow-50 text-yellow-700 border-yellow-200',
   sent:      'bg-blue-50 text-blue-700 border-blue-200',
@@ -379,7 +445,7 @@ export default function AdminDashboard() {
 
                           <div className="flex items-center gap-3 flex-wrap">
                             <button onClick={() => saveSupplier(b.id)} disabled={savingId===b.id}
-                              className="btn-gold py-2 px-5 text-sm flex items-center gap-2 disabled:opacity-50"
+                              className={`${BLU} py-2 px-5 text-sm flex items-center gap-2 disabled:opacity-50 rounded-lg font-semibold transition`}
                               data-testid="save-booking-btn">
                               <Check size={16} /> {savingId===b.id ? 'Saving...' : 'Save Changes'}
                             </button>
@@ -688,12 +754,15 @@ export default function AdminDashboard() {
                               <button
                                 onClick={e => saveQuote(q.id, e)}
                                 disabled={savingQuoteId === q.id}
-                                className="btn-gold w-full py-2 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="w-full py-2.5 text-sm font-semibold rounded-lg bg-[#0071c2] hover:bg-[#005999] text-white transition flex items-center justify-center gap-2 disabled:opacity-50"
                                 data-testid="save-quote-btn"
                               >
                                 <Check size={15}/> {savingQuoteId === q.id ? 'Saving…' : 'Save Changes'}
                               </button>
                             </div>
+                            {/* ── Reply to Customer ── */}
+                            <QuoteReplyPanel quoteId={q.id} passengerEmail={q.passenger_email} api={API}
+                              onSent={() => setQuotes(prev => prev.map(x => x.id===q.id ? {...x, status:'quoted'} : x))} />
                           </div>
                         </div>
                       </div>

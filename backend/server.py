@@ -658,8 +658,94 @@ async def delete_quote(quote_id: str):
         raise HTTPException(status_code=404, detail="Quote not found")
     return {"message": "Quote deleted"}
 
+@api_router.delete("/quotes/{quote_id}")
+async def delete_quote(quote_id: str):
+    """Delete a quote"""
+    result = await db.quotes.delete_one({"id": quote_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return {"message": "Quote deleted"}
 
-# ==================== PARTNER REQUESTS ====================
+
+class QuoteReplyCreate(BaseModel):
+    price: Optional[str] = None        # e.g. "89.50"
+    message: str                        # custom message to customer
+    payment_link: Optional[str] = None  # paste an iWay or manual payment URL
+
+
+@api_router.post("/quotes/{quote_id}/reply")
+async def send_quote_reply(quote_id: str, reply: QuoteReplyCreate, background_tasks: BackgroundTasks):
+    """Admin sends a quote reply (price + message + optional payment link) to the customer."""
+    quote = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    if not quote.get("passenger_email"):
+        raise HTTPException(status_code=400, detail="No customer email on this quote")
+
+    qid = f"QT-{quote_id[:8].upper()}"
+    customer_name = (quote.get("passenger_name") or "").split()[0] or "there"
+    route = f"{quote.get('pickup_location','')} → {quote.get('dropoff_location','')}"
+
+    price_block = f"""
+      <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:8px;padding:16px 20px;margin:0 0 20px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:12px;color:#16a34a;font-weight:bold;text-transform:uppercase;letter-spacing:.05em;">Your Quoted Price</p>
+        <p style="margin:0;font-size:32px;font-weight:bold;color:#15803d;">£{reply.price}</p>
+      </div>""" if reply.price else ''
+
+    payment_block = f"""
+      <div style="text-align:center;margin:0 0 20px;">
+        <a href="{reply.payment_link}" style="display:inline-block;background:#0071c2;color:#fff;font-weight:bold;font-size:15px;padding:14px 32px;border-radius:6px;text-decoration:none;">
+          Pay Now &amp; Confirm Booking
+        </a>
+        <p style="margin:8px 0 0;font-size:11px;color:#6b7280;">Secure payment link · expires in 24 hours</p>
+      </div>""" if reply.payment_link else ''
+
+    html = f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <h1 style="margin:0;color:#d4af37;font-size:22px;font-family:Georgia,serif;">Planet Transfers</h1>
+    <p style="margin:4px 0 0;color:#fff;font-size:13px;">Your Transfer Quote — {qid}</p>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#111;margin:0 0 8px;">Dear {customer_name},</p>
+    <p style="font-size:14px;color:#374151;line-height:1.6;margin:0 0 16px;">Thank you for your quote request. Here is your personalised transfer price:</p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px 16px;margin:0 0 20px;">
+      <p style="margin:0 0 4px;font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:bold;">Your Journey</p>
+      <p style="margin:0;font-size:13px;color:#111;font-weight:600;">{route}</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">{_format_email_date(quote.get('pickup_date',''))} at {quote.get('pickup_time','')} · {quote.get('passengers','')} passenger(s)</p>
+    </div>
+    {price_block}
+    <div style="background:#fff9e6;border-left:4px solid #d4af37;padding:14px 16px;margin:0 0 20px;border-radius:0 6px 6px 0;">
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.7;white-space:pre-line;">{reply.message}</p>
+    </div>
+    {payment_block}
+    <p style="font-size:13px;color:#374151;margin:0 0 6px;">Questions? Reply to this email or WhatsApp: <strong>+44 773 947 6432</strong></p>
+    <p style="font-size:12px;color:#9ca3af;margin:0;">Reference: {qid}</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:14px 32px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">Planet Transfers · bookings@planettransfers.online</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>"""
+
+    async def _send():
+        await _send_email({
+            "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+            "reply_to": [_REPLY_TO_EMAIL],
+            "to":       [quote["passenger_email"]],
+            "subject":  f"Your Transfer Quote – {qid} | Planet Transfers",
+            "html":     html,
+        }, f"Quote reply {qid}")
+        await db.quotes.update_one({"id": quote_id}, {"$set": {"status": "quoted"}})
+
+    background_tasks.add_task(_send)
+    return {"ok": True, "sent_to": quote["passenger_email"], "quote_id": qid}
+
+
+
 
 class PartnerRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1191,10 +1277,33 @@ IWAY_API_BASE = os.environ.get('IWAY_API_BASE', 'https://ng-api.iwayex.com')
 
 resend.api_key = os.environ.get('RESEND_API_KEY', '')
 _SENDER_EMAIL      = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+_SENDER_FALLBACK   = 'onboarding@resend.dev'   # always-verified Resend sender (fallback)
 _SUPPORT_EMAIL     = os.environ.get('ADMIN_EMAIL',  'GBRoyaltransfers@gmail.com')
 _ADMIN_NOTIFY_EMAIL = os.environ.get('ADMIN_EMAIL', 'GBRoyaltransfers@gmail.com')
 # Reply-To is hardcoded — this is the monitored inbox customers must reach
-_REPLY_TO_EMAIL    = 'GBRoyaltransfers@gmail.com'
+_REPLY_TO_EMAIL    = os.environ.get('ADMIN_EMAIL', 'GBRoyaltransfers@gmail.com')
+
+
+async def _send_email(payload: dict, label: str) -> bool:
+    """Send via Resend. If custom domain not yet verified, retries with fallback sender."""
+    for sender in [payload.get("from"), f"Planet Transfers <{_SENDER_FALLBACK}>"]:
+        try:
+            p = dict(payload); p["from"] = sender
+            await asyncio.to_thread(resend.Emails.send, p)
+            if sender != payload.get("from"):
+                logger.info(f"{label} sent via fallback sender")
+            else:
+                logger.info(f"{label} sent")
+            return True
+        except Exception as exc:
+            exc_str = str(exc).lower()
+            logger.error(f"{label} [{sender}] error: {exc}")
+            if any(kw in exc_str for kw in ("not verified", "domain", "sender", "from")):
+                logger.warning(f"{label} → rejected, trying next sender")
+                continue
+            return False
+    logger.error(f"{label} failed with all senders")
+    return False
 
 
 def _format_email_date(date_str: str) -> str:
@@ -1630,34 +1739,24 @@ async def _send_quote_emails(quote: dict) -> None:
     qid = f"QT-{quote.get('id','')[:8].upper()}"
     customer_email = quote.get('passenger_email', '')
 
-    # Admin notification
-    try:
-        await asyncio.to_thread(resend.Emails.send, {
-            "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
-            "reply_to": [customer_email] if customer_email else [_REPLY_TO_EMAIL],
-            "to":       [_ADMIN_NOTIFY_EMAIL],
-            "subject":  f"New Quote Request {qid} – {quote.get('passenger_name','')} | {quote.get('pickup_location','')} → {quote.get('dropoff_location','')}",
-            "html":     _build_quote_admin_html(quote),
-            "headers":  {"Reply-To": customer_email or _REPLY_TO_EMAIL},
-        })
-        logger.info(f"Admin quote notification sent for {qid}")
-    except Exception as exc:
-        logger.error(f"Admin quote notification failed for {qid}: {exc}")
+    await _send_email({
+        "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+        "reply_to": [customer_email] if customer_email else [_REPLY_TO_EMAIL],
+        "to":       [_ADMIN_NOTIFY_EMAIL],
+        "subject":  f"New Quote Request {qid} – {quote.get('passenger_name','')} | {quote.get('pickup_location','')} → {quote.get('dropoff_location','')}",
+        "html":     _build_quote_admin_html(quote),
+        "headers":  {"Reply-To": customer_email or _REPLY_TO_EMAIL},
+    }, f"Admin quote notification {qid}")
 
-    # Customer acknowledgement
     if customer_email:
-        try:
-            await asyncio.to_thread(resend.Emails.send, {
-                "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
-                "reply_to": [_REPLY_TO_EMAIL],
-                "to":       [customer_email],
-                "subject":  f"Quote Request Received – {qid} | Planet Transfers",
-                "html":     _build_quote_customer_html(quote),
-                "headers":  {"Reply-To": _REPLY_TO_EMAIL},
-            })
-            logger.info(f"Customer quote acknowledgement sent to {customer_email} for {qid}")
-        except Exception as exc:
-            logger.error(f"Customer quote acknowledgement failed for {qid}: {exc}")
+        await _send_email({
+            "from":     f"Planet Transfers <{_SENDER_EMAIL}>",
+            "reply_to": [_REPLY_TO_EMAIL],
+            "to":       [customer_email],
+            "subject":  f"Quote Request Received – {qid} | Planet Transfers",
+            "html":     _build_quote_customer_html(quote),
+            "headers":  {"Reply-To": _REPLY_TO_EMAIL},
+        }, f"Customer quote acknowledgement {qid}")
 
 
 @api_router.get("/iway/search")
