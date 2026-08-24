@@ -75,6 +75,8 @@ export default function HomePage() {
     dropoff_location: '',
     pickup_date: '',
     pickup_time: '',
+    return_date: '',
+    return_time: '',
     passengers: 2,
     luggage: 2
   });
@@ -125,17 +127,8 @@ export default function HomePage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Final validation before submit
-    if (!validatePickupTime(formData.pickup_date, formData.pickup_time)) {
-      return;
-    }
-    
-    const bookingData = {
-      ...formData,
-      trip_type: tripType,
-      currency,
-    };
+
+    if (!validatePickupTime(formData.pickup_date, formData.pickup_time)) return;
 
     trackEvent('search_started', {
       pickup: formData.pickup_location,
@@ -145,18 +138,32 @@ export default function HomePage() {
       trip_type: tripType,
     });
 
-    // Navigate to iWay results page to show live vehicle options
-    navigate('/results', { state: bookingData });
+    if (tripType === 'round-trip') {
+      // Round-trip → pre-fill and open the quote form
+      const params = new URLSearchParams({
+        trip_type: 'round-trip',
+        from: formData.pickup_location,
+        to: formData.dropoff_location,
+        date: formData.pickup_date,
+        time: formData.pickup_time,
+        passengers: formData.passengers,
+        luggage: formData.luggage,
+        return_date: formData.return_date || '',
+        return_time: formData.return_time || '',
+      });
+      navigate(`/quote?${params.toString()}`);
+      return;
+    }
+
+    // One-way → live vehicle search
+    navigate('/results', { state: { ...formData, trip_type: tripType, currency } });
   };
 
   const isFormValid = () => {
-    return (
-      formData.pickup_location &&
-      formData.dropoff_location &&
-      formData.pickup_date &&
-      formData.pickup_time &&
-      !timeError
-    );
+    if (!formData.pickup_location || !formData.dropoff_location ||
+        !formData.pickup_date || !formData.pickup_time || timeError) return false;
+    if (tripType === 'round-trip' && (!formData.return_date || !formData.return_time)) return false;
+    return true;
   };
 
   const features = [
@@ -380,6 +387,47 @@ export default function HomePage() {
                   </div>
                 )}
 
+                {/* Return Date and Time — round-trip only */}
+                {tripType === 'round-trip' && (
+                  <div className="grid grid-cols-2 gap-4 pt-1 border-t border-slate-100">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Return Date *</label>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                          <Calendar size={20} className="text-amber-600" />
+                        </div>
+                        <input
+                          type="date"
+                          name="return_date"
+                          value={formData.return_date}
+                          onChange={handleInputChange}
+                          className="input-field flex-1"
+                          required
+                          min={formData.pickup_date || getMinDate()}
+                          data-testid="return-date"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Return Time *</label>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Clock size={20} className="text-blue-600" />
+                        </div>
+                        <input
+                          type="time"
+                          name="return_time"
+                          value={formData.return_time}
+                          onChange={handleInputChange}
+                          className="input-field flex-1"
+                          required
+                          data-testid="return-time"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Passengers & Luggage */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Passengers & Luggage</label>
@@ -427,7 +475,7 @@ export default function HomePage() {
                   data-testid="continue-btn"
                   disabled={!isFormValid()}
                 >
-                  Search Available Vehicles
+                  {tripType === 'round-trip' ? 'Request Return Quote' : 'Search Available Vehicles'}
                   <ArrowRight size={20} />
                 </button>
 

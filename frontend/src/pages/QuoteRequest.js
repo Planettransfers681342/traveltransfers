@@ -44,7 +44,19 @@ export default function QuoteRequest() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(initForm(params.get('from') || '', params.get('to') || '', params.get('vehicle') || ''));
+  const [form, setForm] = useState(() => {
+    const base = initForm(params.get('from') || '', params.get('to') || '', params.get('vehicle') || '');
+    return {
+      ...base,
+      trip_type:    params.get('trip_type') || 'one-way',
+      pickup_date:  params.get('date')        || '',
+      pickup_time:  params.get('time')        || '',
+      return_date:  params.get('return_date') || '',
+      return_pickup_time: params.get('return_time') || '',
+      passengers:   parseInt(params.get('passengers') || base.passengers, 10),
+      luggage:      parseInt(params.get('luggage')    || base.luggage,    10),
+    };
+  });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [quoteRef, setQuoteRef] = useState('');
