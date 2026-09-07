@@ -36,7 +36,7 @@ export default function AdminLogin() {
         {/* Logo */}
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center gap-2">
-            <CarSimple size={40} weight="fill" className="text-[#d4af37]" />
+            <CarSimple size={40} weight="fill" className="text-[#0071c2]" />
             <span className="font-['Playfair_Display'] text-2xl font-semibold text-white">Planet Transfers</span>
           </a>
           <p className="text-slate-400 mt-2">Admin Portal</p>

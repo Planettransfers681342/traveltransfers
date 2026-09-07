@@ -11,7 +11,8 @@ import axios from 'axios';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // ── Booking.com-style blue used throughout admin action buttons ──
-const BLU = 'bg-[#0071c2] hover:bg-[#005999] text-white';
+const BLU = "bg-[#0071c2] hover:bg-[#005999] text-white";
+const ADMIN_BTN = 'bg-[#0071c2] hover:bg-[#005999] text-white rounded-lg font-semibold transition';
 
 function QuoteReplyPanel({ quoteId, passengerEmail, api, onSent }) {
   const [open, setOpen] = React.useState(false);
@@ -24,7 +25,7 @@ function QuoteReplyPanel({ quoteId, passengerEmail, api, onSent }) {
       <button
         type="button"
         onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-        className={`w-full py-2.5 text-sm font-semibold rounded-lg ${BLU} flex items-center justify-center gap-2 transition`}
+        className={`w-full py-2.5 text-sm font-semibold rounded-lg ${ADMIN_BTN} flex items-center justify-center gap-2 transition`}
         data-testid="send-quote-reply-btn"
       >
         <Envelope size={15} weight="fill" /> {sent ? 'Quote Sent ✓' : 'Send Quote to Customer'}
@@ -65,7 +66,7 @@ function QuoteReplyPanel({ quoteId, passengerEmail, api, onSent }) {
                 } catch(err) { alert('Failed to send. Please try again.'); }
                 finally { setSending(false); }
               }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg ${BLU} disabled:opacity-50 transition`}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg ${ADMIN_BTN} disabled:opacity-50 transition`}
               data-testid="confirm-reply-btn">
               {sending ? 'Sending…' : `Send to ${passengerEmail}`}
             </button>
@@ -77,8 +78,8 @@ function QuoteReplyPanel({ quoteId, passengerEmail, api, onSent }) {
 }
 
 const FULFILLMENT_COLORS = {
-  pending:   'bg-yellow-50 text-yellow-700 border-yellow-200',
-  sent:      'bg-blue-50 text-blue-700 border-blue-200',
+  pending:   'bg-blue-50 text-blue-700 border-blue-200',
+  sent:      'bg-sky-50 text-sky-700 border-sky-200',
   confirmed: 'bg-green-50 text-green-700 border-green-200',
   cancelled: 'bg-red-50 text-red-700 border-red-200',
 };
@@ -86,7 +87,7 @@ const PAYMENT_COLORS = {
   unpaid:            'bg-red-50 text-red-700 border-red-200',
   paid:              'bg-green-50 text-green-700 border-green-200',
   payment_completed: 'bg-green-50 text-green-700 border-green-200',
-  pending:           'bg-yellow-50 text-yellow-700 border-yellow-200',
+  pending:           'bg-slate-100 text-slate-600 border-slate-300',
   refunded:          'bg-slate-50 text-slate-500 border-slate-200',
 };
 
@@ -315,13 +316,13 @@ export default function AdminDashboard() {
       {/* ── Sidebar ── */}
       <aside className="w-56 min-h-screen bg-[#1a1a2e] flex flex-col py-6 px-3 fixed top-0 left-0 z-40">
         <div className="flex items-center gap-2 px-2 mb-8">
-          <CarSimple size={24} weight="fill" className="text-[#d4af37]" />
+          <CarSimple size={24} weight="fill" className="text-[#0071c2]" />
           <span className="text-white font-semibold text-sm font-['Playfair_Display']">Planet Transfers</span>
         </div>
         <nav className="flex-1 space-y-1">
           {NAV.map(n => (
             <button key={n.id} onClick={() => setTab(n.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab===n.id ? 'bg-[#d4af37] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab===n.id ? 'bg-[#0071c2] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
               data-testid={`nav-${n.id}`}>
               {n.icon} <span className="flex-1 text-left">{n.label}</span>
               {n.badge ? <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{n.badge}</span> : null}
@@ -343,7 +344,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
                 { label: 'Total Bookings',  value: allBookings.length,                                                     color: 'text-blue-600' },
-                { label: 'Pending',         value: allBookings.filter(b=>!b.booking_status||b.booking_status==='pending').length, color: 'text-yellow-600' },
+                { label: 'Pending',         value: allBookings.filter(b=>!b.booking_status||b.booking_status==='pending').length, color: 'text-[#0071c2]' },
                 { label: 'Confirmed',       value: allBookings.filter(b=>b.booking_status==='confirmed').length,            color: 'text-green-600' },
                 { label: 'Open Quotes',     value: quotes.filter(q=>['new','pending'].includes(q.status)).length,                              color: 'text-purple-600' },
               ].map((c,i) => (
@@ -385,7 +386,7 @@ export default function AdminDashboard() {
                 <button onClick={fetchAll} className="p-2 border border-slate-200 rounded-lg bg-white hover:bg-slate-50">
                   <ArrowsClockwise size={16} className="text-slate-500" />
                 </button>
-                <button onClick={() => setTab('new')} className="btn-gold py-2 px-4 text-sm flex items-center gap-2">
+                <button onClick={() => setTab('new')} className={`${ADMIN_BTN} py-2 px-4 text-sm flex items-center gap-2`}>
                   <Plus size={16} /> New Booking
                 </button>
               </div>
@@ -469,7 +470,7 @@ export default function AdminDashboard() {
 
                           <div className="flex items-center gap-3 flex-wrap">
                             <button onClick={() => saveSupplier(b.id)} disabled={savingId===b.id}
-                              className={`${BLU} py-2 px-5 text-sm flex items-center gap-2 disabled:opacity-50 rounded-lg font-semibold transition`}
+                              className={`${ADMIN_BTN} py-2 px-5 text-sm flex items-center gap-2 disabled:opacity-50 rounded-lg font-semibold transition`}
                               data-testid="save-booking-btn">
                               <Check size={16} /> {savingId===b.id ? 'Saving...' : 'Save Changes'}
                             </button>
@@ -512,7 +513,7 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">Booking Created: {nbDone}</h3>
                 <p className="text-slate-500 text-sm mb-6">The booking has been added to All Bookings. You can now send the voucher PDF to the passenger.</p>
                 <div className="flex justify-center gap-3">
-                  <button onClick={() => { setNBDone(null); setNB(EMPTY_BOOKING); }} className="btn-gold py-2 px-5 text-sm">Create Another</button>
+                  <button onClick={() => { setNBDone(null); setNB(EMPTY_BOOKING); }} className={`${ADMIN_BTN} py-2 px-5 text-sm`}>Create Another</button>
                   <button onClick={() => { setTab('bookings'); setNBDone(null); setNB(EMPTY_BOOKING); }} className="border-2 border-slate-300 text-slate-700 py-2 px-5 rounded-lg text-sm hover:bg-slate-50">View All Bookings</button>
                 </div>
               </div>
@@ -604,7 +605,7 @@ export default function AdminDashboard() {
                   <textarea rows={2} value={newBooking.internal_notes} onChange={e=>setNB(f=>({...f,internal_notes:e.target.value}))} placeholder="Admin notes only — not visible to customer" className="input-field resize-none w-full" />
                 </div>
 
-                <button type="submit" disabled={nbLoading} className="btn-gold w-full flex items-center justify-center gap-2 disabled:opacity-50" data-testid="nb-submit">
+                <button type="submit" disabled={nbLoading} className={`${ADMIN_BTN} w-full flex items-center justify-center gap-2 disabled:opacity-50`} data-testid="nb-submit">
                   {nbLoading ? 'Creating...' : <><Plus size={18} /> Create Booking</>}
                 </button>
               </form>
@@ -833,7 +834,7 @@ export default function AdminDashboard() {
                             {/* Save edit button */}
                             {quoteEditMode && (
                               <button onClick={e=>saveQuoteEdit(q.id,e)} disabled={savingEditId===q.id}
-                                className={`w-full py-2.5 text-sm font-semibold rounded-lg ${BLU} transition flex items-center justify-center gap-2 disabled:opacity-50`}
+                                className={`w-full py-2.5 text-sm font-semibold rounded-lg ${ADMIN_BTN} transition flex items-center justify-center gap-2 disabled:opacity-50`}
                                 data-testid="save-quote-edit-btn">
                                 <Check size={15}/> {savingEditId===q.id ? 'Saving…' : 'Save Edits'}
                               </button>
@@ -868,7 +869,7 @@ export default function AdminDashboard() {
                               </div>
 
                               <button onClick={e=>saveQuote(q.id,e)} disabled={savingQuoteId===q.id}
-                                className={`w-full py-2.5 text-sm font-semibold rounded-lg ${BLU} transition flex items-center justify-center gap-2 disabled:opacity-50`}
+                                className={`w-full py-2.5 text-sm font-semibold rounded-lg ${ADMIN_BTN} transition flex items-center justify-center gap-2 disabled:opacity-50`}
                                 data-testid="save-quote-btn">
                                 <Check size={15}/> {savingQuoteId===q.id ? 'Saving…' : 'Save Status & Notes'}
                               </button>
@@ -968,7 +969,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-semibold text-slate-900">Route Prices</h1>
               <button onClick={() => { setEditRoute(null); setRouteForm({from_location:'',to_location:'',economy_price:'',business_price:'',group_price:'',bus_price:''}); setRouteModal(true); }}
-                className="btn-gold py-2 px-4 text-sm flex items-center gap-2">
+                className={`${ADMIN_BTN} py-2 px-4 text-sm flex items-center gap-2`}>
                 <Plus size={16} /> Add Route
               </button>
             </div>
@@ -1040,7 +1041,7 @@ export default function AdminDashboard() {
                         setRoutes(prev=>[...prev, data]);
                       }
                       setRouteModal(false);
-                    }} className="btn-gold w-full py-2.5 mt-2">
+                    }} className={`${ADMIN_BTN} w-full py-2.5 mt-2`}>
                       {editingRoute ? 'Save Changes' : 'Add Route'}
                     </button>
                   </div>
