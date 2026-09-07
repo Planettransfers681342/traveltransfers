@@ -153,8 +153,9 @@ class QuoteRequest(BaseModel):
     passenger_email: str
     passenger_phone: str
     # ── Admin ──
-    status: str = "new"
+    status: str = "pending"
     admin_notes: Optional[str] = None
+    status_history: Optional[list] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class QuoteRequestCreate(BaseModel):
@@ -188,9 +189,43 @@ class QuoteRequestCreate(BaseModel):
     passenger_email: str
     passenger_phone: str
 
+QUOTE_VALID_STATUSES = [
+    "new", "pending", "in_progress", "quote_sent",
+    "awaiting_customer", "confirmed", "done", "cancelled"
+]
+
 class QuoteStatusUpdate(BaseModel):
     status: str
     admin_notes: Optional[str] = None
+    history_note: Optional[str] = None   # optional note recorded in history
+
+class QuoteEditData(BaseModel):
+    """Fields an admin can edit on a quote."""
+    model_config = ConfigDict(extra="ignore")
+    pickup_location: Optional[str] = None
+    dropoff_location: Optional[str] = None
+    pickup_date: Optional[str] = None
+    pickup_time: Optional[str] = None
+    flight_number: Optional[str] = None
+    flight_arrival_time: Optional[str] = None
+    passengers: Optional[int] = None
+    children: Optional[int] = None
+    child_seat_details: Optional[str] = None
+    luggage: Optional[int] = None
+    vehicle_preference: Optional[str] = None
+    special_requests: Optional[str] = None
+    return_pickup_location: Optional[str] = None
+    return_dropoff_location: Optional[str] = None
+    return_date: Optional[str] = None
+    return_pickup_time: Optional[str] = None
+    return_flight_number: Optional[str] = None
+    return_flight_departure_time: Optional[str] = None
+    return_passengers: Optional[int] = None
+    return_luggage: Optional[int] = None
+    return_notes: Optional[str] = None
+    passenger_name: Optional[str] = None
+    passenger_email: Optional[str] = None
+    passenger_phone: Optional[str] = None
 
 class AdminLogin(BaseModel):
     password: str
@@ -397,7 +432,7 @@ async def create_booking(booking: BookingCreate):
     return booking_obj
 
 @api_router.get("/bookings")
-async def get_all_bookings():
+async def get_all_bookings_legacy():
     bookings = await db.bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return bookings
 
@@ -632,31 +667,39 @@ async def get_quote_by_id(quote_id: str):
 
 @api_router.put("/quotes/{quote_id}/status")
 async def update_quote_status(quote_id: str, update: QuoteStatusUpdate):
-    """Update quote status"""
-    valid_statuses = ["new", "reviewing", "quoted", "accepted", "declined", "closed"]
-    if update.status not in valid_statuses:
-        raise HTTPException(status_code=400, detail="Invalid quote status")
-    
-    update_data = {"status": update.status}
+    """Update quote status and record in history"""
+    if update.status not in QUOTE_VALID_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid quote status. Valid: {QUOTE_VALID_STATUSES}")
+
+    history_entry = {
+        "status": update.status,
+        "changed_at": datetime.now(timezone.utc).isoformat(),
+        "changed_by": "admin",
+        "note": update.history_note or "",
+    }
+    update_data: dict = {"status": update.status}
     if update.admin_notes is not None:
         update_data["admin_notes"] = update.admin_notes
-    
+
     result = await db.quotes.update_one(
         {"id": quote_id},
-        {"$set": update_data}
+        {"$set": update_data, "$push": {"status_history": history_entry}},
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
-    
     return {"message": "Quote status updated", "new_status": update.status}
 
-@api_router.delete("/quotes/{quote_id}")
-async def delete_quote(quote_id: str):
-    """Delete a quote"""
-    result = await db.quotes.delete_one({"id": quote_id})
-    if result.deleted_count == 0:
+
+@api_router.put("/quotes/{quote_id}/edit")
+async def edit_quote(quote_id: str, data: QuoteEditData):
+    """Admin edits quote data fields"""
+    patch = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not patch:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = await db.quotes.update_one({"id": quote_id}, {"$set": patch})
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
-    return {"message": "Quote deleted"}
+    return {"message": "Quote updated"}
 
 @api_router.delete("/quotes/{quote_id}")
 async def delete_quote(quote_id: str):
