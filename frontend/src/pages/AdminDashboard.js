@@ -236,7 +236,7 @@ export default function AdminDashboard() {
   const QUOTE_STATUS_COLORS = {
     new:               'bg-blue-50 text-blue-700 border-blue-200',
     pending:           'bg-blue-50 text-blue-700 border-blue-200',
-    in_progress:       'bg-yellow-50 text-yellow-700 border-yellow-200',
+    in_progress:       'bg-sky-50 text-sky-700 border-sky-200',
     quote_sent:        'bg-purple-50 text-purple-700 border-purple-200',
     awaiting_customer: 'bg-orange-50 text-orange-700 border-orange-200',
     confirmed:         'bg-green-50 text-green-700 border-green-200',
@@ -623,7 +623,7 @@ export default function AdminDashboard() {
                 <select
                   value={quoteStatusFilter}
                   onChange={e => { setQuoteFilter(e.target.value); setExpandedQuote(null); }}
-                  className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                  className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071c2]"
                   data-testid="quote-filter-select"
                 >
                   <option value="all">All Statuses</option>
@@ -673,7 +673,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="col-span-2 text-xs text-slate-600">
                           <p>{q.pickup_date}</p>
-                          {isRT && <p className="text-amber-600 font-medium">Round-Trip</p>}
+                          {isRT && <p className="text-[#0071c2] font-medium text-xs">Round-Trip</p>}
                         </div>
                         <div className="col-span-2">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${QUOTE_STATUS_COLORS[effStatus] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
@@ -695,7 +695,7 @@ export default function AdminDashboard() {
 
                     {/* Expanded detail panel */}
                     {isOpen && (
-                      <div className="bg-slate-50 border-t border-slate-200 px-5 py-5" data-testid={`quote-detail-${q.id?.slice(0,8)}`}>
+                      <div className="bg-white border-t border-slate-200 px-5 py-5" data-testid={`quote-detail-${q.id?.slice(0,8)}`}>
                         {/* Header */}
                         <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
                           <div>
@@ -768,8 +768,8 @@ export default function AdminDashboard() {
                           </div>
 
                           {/* Outbound */}
-                          <div className="bg-white rounded-xl p-4 border border-blue-100 space-y-3">
-                            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">Outbound Journey</p>
+                          <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+                            <p className="text-xs font-bold text-[#0071c2] uppercase tracking-wide mb-2">Outbound Journey</p>
                             {quoteEditMode ? (
                               <>
                                 {[['pickup_location','From'],['dropoff_location','To'],['pickup_date','Pickup Date'],['pickup_time','Pickup Time'],
@@ -800,8 +800,8 @@ export default function AdminDashboard() {
                           {/* Return / Status / Notes / History */}
                           <div className="space-y-4">
                             {isRT && (
-                              <div className="bg-white rounded-xl p-4 border border-amber-200 space-y-3">
-                                <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-2">Return Journey</p>
+                              <div className="bg-white rounded-xl p-4 border border-blue-100 space-y-3">
+                                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">Return Journey</p>
                                 {quoteEditMode ? (
                                   <>
                                     {[['return_pickup_location','Return From'],['return_dropoff_location','Return To'],
@@ -848,7 +848,7 @@ export default function AdminDashboard() {
                                 <select
                                   value={quoteForm.status || effStatus}
                                   onChange={e=>{e.stopPropagation(); setQF(f=>({...f,status:e.target.value}));}}
-                                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0071c2]"
                                   data-testid="quote-status-select"
                                 >
                                   {qStatuses.map(s=><option key={s} value={s}>{qStatusLabel(s)}</option>)}
@@ -862,7 +862,7 @@ export default function AdminDashboard() {
                                   value={quoteForm.admin_notes ?? ''}
                                   onChange={e=>{e.stopPropagation(); setQF(f=>({...f,admin_notes:e.target.value}));}}
                                   rows={3} placeholder="Internal notes — not visible to customer"
-                                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#0071c2]"
                                   data-testid="quote-admin-notes"
                                 />
                               </div>
