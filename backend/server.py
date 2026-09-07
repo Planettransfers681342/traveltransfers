@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, BackgroundTasks
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -273,6 +274,20 @@ VEHICLE_TYPES = [
 
 # Admin password from environment
 ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
+# Admin identity shown in audit trails (email preferred over literal "admin")
+_ADMIN_IDENTITY = os.environ.get('ADMIN_EMAIL', 'admin')
+
+# ── Session store: token → {"email": str} ──────────────────────────────────
+_admin_sessions: Dict[str, dict] = {}
+_http_bearer = HTTPBearer(auto_error=False)
+
+async def require_admin(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_http_bearer),
+) -> dict:
+    """FastAPI dependency — rejects requests without a valid admin session token."""
+    if credentials and credentials.credentials in _admin_sessions:
+        return _admin_sessions[credentials.credentials]
+    raise HTTPException(status_code=401, detail="Admin authentication required")
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -537,9 +552,11 @@ async def update_booking_notes(booking_id: str, update: BookingNotesUpdate):
 
 @api_router.post("/admin/login")
 async def admin_login(login: AdminLogin):
-    if login.password == ADMIN_PASSWORD:
-        return {"success": True, "message": "Login successful"}
-    raise HTTPException(status_code=401, detail="Invalid password")
+    if login.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid password")
+    token = uuid.uuid4().hex
+    _admin_sessions[token] = {"email": _ADMIN_IDENTITY}
+    return {"success": True, "message": "Login successful", "token": token}
 
 @api_router.post("/admin/test-email")
 async def send_test_email(to_email: str = "GBRoyaltransfers@gmail.com"):
@@ -652,29 +669,43 @@ async def create_quote(quote: QuoteRequestCreate, background_tasks: BackgroundTa
     return quote_obj
 
 @api_router.get("/quotes")
-async def get_all_quotes():
-    """Get all quotes for admin panel"""
+async def get_all_quotes(_admin=Depends(require_admin)):
+    """Get all quotes — admin only"""
     quotes = await db.quotes.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return quotes
 
 @api_router.get("/quotes/{quote_id}")
-async def get_quote_by_id(quote_id: str):
-    """Get a single quote by ID"""
+async def get_quote_by_id(
+    quote_id: str,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_http_bearer),
+):
+    """Get a single quote.
+    Admin (valid token): full record including admin_notes and status_history.
+    Customer (no token): public fields only — admin_notes and status_history stripped.
+    """
     quote = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
+    is_admin = credentials and credentials.credentials in _admin_sessions
+    if not is_admin:
+        quote.pop("admin_notes", None)
+        quote.pop("status_history", None)
     return quote
 
 @api_router.put("/quotes/{quote_id}/status")
-async def update_quote_status(quote_id: str, update: QuoteStatusUpdate):
-    """Update quote status and record in history"""
+async def update_quote_status(
+    quote_id: str,
+    update: QuoteStatusUpdate,
+    admin=Depends(require_admin),
+):
+    """Update quote status — admin only"""
     if update.status not in QUOTE_VALID_STATUSES:
         raise HTTPException(status_code=400, detail=f"Invalid quote status. Valid: {QUOTE_VALID_STATUSES}")
 
     history_entry = {
         "status": update.status,
         "changed_at": datetime.now(timezone.utc).isoformat(),
-        "changed_by": "admin",
+        "changed_by": admin["email"],
         "note": update.history_note or "",
     }
     update_data: dict = {"status": update.status}
@@ -691,8 +722,8 @@ async def update_quote_status(quote_id: str, update: QuoteStatusUpdate):
 
 
 @api_router.put("/quotes/{quote_id}/edit")
-async def edit_quote(quote_id: str, data: QuoteEditData):
-    """Admin edits quote data fields"""
+async def edit_quote(quote_id: str, data: QuoteEditData, _admin=Depends(require_admin)):
+    """Admin edits quote data fields — admin only"""
     patch = {k: v for k, v in data.model_dump().items() if v is not None}
     if not patch:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -702,8 +733,8 @@ async def edit_quote(quote_id: str, data: QuoteEditData):
     return {"message": "Quote updated"}
 
 @api_router.delete("/quotes/{quote_id}")
-async def delete_quote(quote_id: str):
-    """Delete a quote"""
+async def delete_quote(quote_id: str, _admin=Depends(require_admin)):
+    """Delete a quote — admin only"""
     result = await db.quotes.delete_one({"id": quote_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
@@ -717,7 +748,7 @@ class QuoteReplyCreate(BaseModel):
 
 
 @api_router.post("/quotes/{quote_id}/reply")
-async def send_quote_reply(quote_id: str, reply: QuoteReplyCreate, background_tasks: BackgroundTasks):
+async def send_quote_reply(quote_id: str, reply: QuoteReplyCreate, background_tasks: BackgroundTasks, _admin=Depends(require_admin)):
     """Admin sends a quote reply (price + message + optional payment link) to the customer."""
     quote = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not quote:

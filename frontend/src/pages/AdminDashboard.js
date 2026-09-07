@@ -4,7 +4,7 @@ import {
   CarSimple, House, ListDashes, CurrencyGbp, SignOut, Plus, Trash,
   PencilSimple, X, Check, MagnifyingGlass, ChatCircleText, Handshake,
   Gear, FilePdf, Note, CheckCircle, ArrowsClockwise,
-  UserCircle, Phone, Envelope, Copy, ArrowDown, ArrowUp, ClockCounterClockwise, FunnelSimple
+  UserCircle, Phone, Envelope, Copy, ArrowDown, ArrowUp, ClockCounterClockwise, FunnelSimple, List
 } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -142,6 +142,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!localStorage.getItem('adminAuth')) { navigate('/admin'); return; }
+    const token = localStorage.getItem('adminToken');
+    if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     fetchAll();
   }, []);
 
@@ -165,7 +167,12 @@ export default function AdminDashboard() {
     }
   };
 
-  const logout = () => { localStorage.removeItem('adminAuth'); navigate('/admin'); };
+  const logout = () => {
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminToken');
+    delete axios.defaults.headers.common['Authorization'];
+    navigate('/admin');
+  };
 
   const filtered = allBookings.filter(b => {
     const q = search.toLowerCase();
@@ -310,18 +317,26 @@ export default function AdminDashboard() {
     { id: 'settings',   label: 'Settings',         icon: <Gear size={18} /> },
   ];
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#f5f5f2] flex">
 
+      {/* ── Mobile overlay backdrop ── */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className="w-56 min-h-screen bg-[#1a1a2e] flex flex-col py-6 px-3 fixed top-0 left-0 z-40">
+      <aside className={`w-56 min-h-screen bg-[#1a1a2e] flex flex-col py-6 px-3 fixed top-0 left-0 z-40 transition-transform duration-200
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex items-center gap-2 px-2 mb-8">
           <CarSimple size={24} weight="fill" className="text-[#0071c2]" />
           <span className="text-white font-semibold text-sm font-['Playfair_Display']">Planet Transfers</span>
         </div>
         <nav className="flex-1 space-y-1">
           {NAV.map(n => (
-            <button key={n.id} onClick={() => setTab(n.id)}
+            <button key={n.id} onClick={() => { setTab(n.id); setMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab===n.id ? 'bg-[#0071c2] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
               data-testid={`nav-${n.id}`}>
               {n.icon} <span className="flex-1 text-left">{n.label}</span>
@@ -335,7 +350,14 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="ml-56 flex-1 p-6">
+      <main className="lg:ml-56 flex-1 p-4 lg:p-6">
+        {/* Mobile top bar */}
+        <div className="lg:hidden flex items-center gap-3 mb-4">
+          <button onClick={() => setMobileMenuOpen(true)} className="p-2 rounded-lg bg-[#1a1a2e] text-white">
+            <List size={20} />
+          </button>
+          <span className="font-semibold text-slate-800 text-sm">Planet Transfers Admin</span>
+        </div>
 
         {/* ── DASHBOARD ── */}
         {tab === 'dashboard' && (

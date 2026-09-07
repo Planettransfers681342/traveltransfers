@@ -21,6 +21,7 @@ export default function AdminLogin() {
       const res = await axios.post(`${API}/admin/login`, { password });
       if (res.data.success) {
         localStorage.setItem('adminAuth', 'true');
+        localStorage.setItem('adminToken', res.data.token);
         navigate('/admin/dashboard');
       }
     } catch (err) {
